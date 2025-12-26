@@ -1,14 +1,14 @@
 {% extends 'base.html' %}
 
-{% block title %}Início - Mateco{% endblock %}
+{% block title %}
+  Início - Mateco
+{% endblock %}
 
 {% block content %}
-    <div style="text-align: center;">
-        <h1>Bem-vindo ao Sistema</h1>
-        <p>Selecione uma opção no menu acima para começar.</p>
-        <br>
-        <a href="{% url 'pdv' %}" style="background: #27ae60; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-size: 1.2em;">
-            Abrir Frente de Caixa
-        </a>
-    </div>
+  <div style="text-align: center;">
+    <h1>Bem-vindo ao Sistema</h1>
+    <p>Selecione uma opção no menu acima para começar.</p>
+    <br />
+    <a href="{% url 'emitir' %}" style="background: #27ae60; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-size: 1.2em;">Emitir Nota Fiscal</a>
+  </div>
 {% endblock %}

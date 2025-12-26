@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+
+{% block title %}PDV - Frente de Caixa{% endblock %}
+
+{% block head %}
+    <style>
+        .caixa { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 400px; margin: 0 auto; text-align: center; }
+        
+        h1 { color: #333; font-size: 1.5rem; margin-bottom: 20px; }
+        
+        .campo-valor { margin: 20px 0; }
+        label { display: block; font-weight: bold; color: #555; margin-bottom: 5px; text-align: left; }
+        input[type="number"] { 
+            width: 100%; padding: 15px; font-size: 1.8em; text-align: center; 
+            border: 2px solid #ddd; border-radius: 8px; box-sizing: border-box; 
+            color: #2c3e50; font-weight: bold; 
+        }
+        input:focus { border-color: #3498db; outline: none; }
+
+        .btn-verificar { background-color: #f39c12; color: white; border: none; padding: 15px 30px; font-size: 1.2em; border-radius: 5px; cursor: pointer; width: 100%; margin-top: 20px; font-weight: bold; }
+        .btn-verificar:hover { background-color: #e67e22; }
+
+        /* Modal */
+        dialog { border: none; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); width: 90%; max-width: 400px; padding: 25px; }
+        dialog::backdrop { background: rgba(0,0,0,0.6); }
+        
+        .modal-resumo { background: #f8f9fa; padding: 15px; border-radius: 5px; text-align: left; margin: 15px 0; border: 1px solid #eee; }
+        .modal-item { font-size: 0.9em; color: #555; border-bottom: 1px dashed #ccc; padding: 5px 0; display: flex; justify-content: space-between; }
+        .modal-total { font-size: 1.4em; font-weight: bold; color: #27ae60; text-align: right; margin-top: 10px; }
+
+        .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+        .btn-cancel { flex: 1; background: #95a5a6; color: white; border: none; padding: 12px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .btn-confirm { flex: 1; background: #27ae60; color: white; border: none; padding: 12px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .btn-confirm:disabled { background: #ccc; cursor: not-allowed; }
+
+        .sucesso-msg { color: green; font-weight: bold; margin-top: 15px; font-size: 1.1em; }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="caixa">
+        <h1>Emissão Rápida</h1>
+        
+        <div class="campo-valor">
+            <label for="valorInput">Valor Total da Venda:</label>
+            <input type="number" id="valorInput" placeholder="0,00" step="0.01" min="1">
+        </div>
+        
+        <button onclick="abrirConfirmacao()" class="btn-verificar">
+            VERIFICAR NOTA
+        </button>
+
+        <div id="status"></div>
+    </div>
+
+    <dialog id="modalConfirmacao">
+        <h2 style="margin-top: 0; color: #333;">Confirmação</h2>
+        <p>A nota será gerada automaticamente com os seguintes dados:</p>
+        
+        <div class="modal-resumo">
+            <div class="modal-item">
+                <span>1x PRODUTO GENERICO</span>
+                <span id="resumoValor">R$ 0,00</span>
+            </div>
+            <div class="modal-total">Total: <span id="totalModal">R$ 0,00</span></div>
+        </div>
+        
+        <div class="modal-actions">
+            <button class="btn-cancel" onclick="fecharModal()">Voltar</button>
+            <button id="btnEmitirReal" class="btn-confirm" onclick="emitirNotaReal()">EMITIR AGORA</button>
+        </div>
+    </dialog>
+
+    {% csrf_token %}
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        const modal = document.getElementById('modalConfirmacao');
+        const inputValor = document.getElementById('valorInput');
+
+        function abrirConfirmacao() {
+            const valor = parseFloat(inputValor.value);
+
+            if (isNaN(valor) || valor <= 0) {
+                alert("Por favor, digite um valor válido!");
+                return;
+            }
+
+            // Atualiza o modal com os dados simulados
+            // (Aqui simulamos o que o Python vai fazer: 1 item com o valor total)
+            document.getElementById('resumoValor').innerText = "R$ " + valor.toFixed(2);
+            document.getElementById('totalModal').innerText = "R$ " + valor.toFixed(2);
+            
+            modal.showModal();
+        }
+
+        function fecharModal() {
+            modal.close();
+        }
+
+        async function emitirNotaReal() {
+            const btn = document.getElementById('btnEmitirReal');
+            const statusDiv = document.getElementById('status');
+            const valorVenda = parseFloat(inputValor.value);
+            
+            // Bloqueia botão para evitar duplo clique
+            btn.disabled = true;
+            btn.innerText = "Processando...";
+
+            try {
+                const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+                const response = await fetch('/emitir-nota/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken
+                    },
+                    body: JSON.stringify({ valor: valorVenda }) // Envia só o valor!
+                });
+
+                const data = await response.json();
+
+                modal.close(); // Fecha o modal
+
+                if (response.ok) {
+                    const linkPdf = `/imprimir-nota/${data.id_nota}/`;
+                    statusDiv.innerHTML = `
+                        <div class="sucesso-msg">
+                            ✅ NOTA DE R$ ${valorVenda.toFixed(2)} AUTORIZADA!<br><br>
+                            <a href="${linkPdf}" target="_blank" style="background: #3498db; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
+                                🖨️ IMPRIMIR CUPOM
+                            </a>
+                        </div>`;
+                    
+                    // Limpa o campo para a próxima
+                    inputValor.value = ""; 
+                } else {
+                    alert("Erro ao emitir: " + data.mensagem);
+                }
+
+            } catch (error) {
+                console.error(error);
+                alert("Erro de comunicação: " + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "EMITIR AGORA";
+            }
+        }
+    </script>
+{% endblock %}
