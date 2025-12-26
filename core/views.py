@@ -6,6 +6,7 @@ from datetime import datetime
 from django.shortcuts import render
 from django.http import JsonResponse, HttpResponse
 from decouple import config
+from .models import NotaFiscal
 
 # --- FUNÇÕES AUXILIARES ---
 
