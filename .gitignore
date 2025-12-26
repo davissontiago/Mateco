@@ -1,0 +1,13 @@
+# Python e Venv
+__pycache__/
+*.py[cod]
+venv/
+.env
+
+# Banco de dados local
+db.sqlite3
+
+# Arquivos estáticos e mídia (upload de usuários)
+static/
+media/
+staticfiles/
