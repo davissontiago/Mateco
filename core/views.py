@@ -23,31 +23,18 @@ def pegar_token_acesso():
     else: raise Exception(f"Erro Auth: {response.text}")
 
 def gerar_nota_json(valor_total):
-    """
-    Gera automaticamente os itens baseados no valor total informado.
-    Lógica: Cria 1 item genérico com o valor total.
-    """
     cnpj = config('CNPJ_EMITENTE')
     ie = config('IE_EMITENTE')
     
-    # Cria 1 item com o valor cheio (Mais simples e direto)
     lista_detalhes = [{
         "nItem": 1,
         "prod": {
             "cProd": "GEN001",
             "cEAN": "SEM GTIN",
-            "xProd": "PRODUTO GENERICO DIVERSOS", # Nome que sairá na nota
-            "NCM": "25232910", # NCM Genérico
-            "CFOP": "5102",
-            "uCom": "UN",
-            "qCom": 1.0,
-            "vUnCom": valor_total,
-            "vProd": valor_total,
-            "cEANTrib": "SEM GTIN",
-            "uTrib": "UN",
-            "qTrib": 1.0,
-            "vUnTrib": valor_total,
-            "indTot": 1
+            "xProd": "PRODUTO GENERICO DIVERSOS",
+            "NCM": "25232910", "CFOP": "5102", "uCom": "UN", "qCom": 1.0,
+            "vUnCom": valor_total, "vProd": valor_total, "cEANTrib": "SEM GTIN",
+            "uTrib": "UN", "qTrib": 1.0, "vUnTrib": valor_total, "indTot": 1
         },
         "imposto": {
             "ICMS": { "ICMSSN102": { "orig": 0, "CSOSN": "102" } },
@@ -75,10 +62,16 @@ def gerar_nota_json(valor_total):
             "emit": { "CNPJ": cnpj, "IE": ie, "CRT": 1 },
             "det": lista_detalhes,
             "total": {
+                # CORREÇÃO AQUI: Adicionados todos os campos obrigatórios zerados
                 "ICMSTot": {
-                    "vProd": valor_total, "vNF": valor_total, "vTotTrib": 0,
-                    "vBC": 0, "vICMS": 0, "vBCST": 0, "vST": 0, "vFrete": 0, "vSeg": 0,
-                    "vDesc": 0, "vII": 0, "vIPI": 0, "vPIS": 0, "vCOFINS": 0, "vOutro": 0
+                    "vBC": 0.00, "vICMS": 0.00, "vICMSDeson": 0.00, 
+                    "vFCP": 0.00, "vBCST": 0.00, "vST": 0.00, 
+                    "vFCPST": 0.00, "vFCPSTRet": 0.00,
+                    "vProd": valor_total, 
+                    "vFrete": 0.00, "vSeg": 0.00, "vDesc": 0.00,
+                    "vII": 0.00, "vIPI": 0.00, "vIPIDevol": 0.00, 
+                    "vPIS": 0.00, "vCOFINS": 0.00, "vOutro": 0.00, 
+                    "vNF": valor_total, "vTotTrib": 0.00
                 }
             },
             "transp": { "modFrete": 9 },
