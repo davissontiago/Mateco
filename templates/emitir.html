@@ -1,184 +1,374 @@
 {% extends 'base.html' %}
 
-{% block title %}Emissor Inteligente{% endblock %}
+{% block title %}Frente de Caixa{% endblock %}
 
 {% block head %}
     <style>
-        .caixa { background: white; padding: 40px; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); width: 100%; max-width: 400px; margin: 0 auto; text-align: center; }
+        /* Container principal */
+        .container-pdv { 
+            width: 100%; max-width: 600px; margin: 0 auto; background: white; 
+            padding: 15px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); 
+            display: flex; flex-direction: column; max-height: 95vh; 
+        }
         
-        h1 { color: #2c3e50; font-size: 1.8rem; margin-bottom: 30px; }
-        
-        input[type="number"] { width: 100%; padding: 15px; font-size: 2em; text-align: center; border: 2px solid #ddd; border-radius: 10px; box-sizing: border-box; color: #2c3e50; font-weight: bold; margin-bottom: 20px;}
-        
-        .btn-verificar { background-color: #3498db; color: white; border: none; padding: 18px; font-size: 1.3em; border-radius: 10px; cursor: pointer; width: 100%; font-weight: bold; }
-        .btn-verificar:hover { background-color: #2980b9; }
+        h1 { text-align: center; color: #2c3e50; margin: 0 0 15px 0; font-size: 1.4rem; }
 
-        /* Modal */
-        dialog { border: none; border-radius: 15px; box-shadow: 0 15px 40px rgba(0,0,0,0.4); width: 90%; max-width: 450px; padding: 20px; }
-        dialog::backdrop { background: rgba(0,0,0,0.7); }
+        /* Busca */
+        .area-busca { position: relative; margin-bottom: 15px; flex-shrink: 0; }
+        .input-busca { 
+            width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; 
+            font-size: 1.1em; box-sizing: border-box; -webkit-appearance: none; 
+        }
+        .input-busca:focus { border-color: #3498db; outline: none; }
         
-        /* Cabeçalho do Modal */
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
-        .meta-valor { font-size: 1.1em; color: #7f8c8d; }
-        .meta-valor strong { color: #2c3e50; }
+        .sugestoes-lista { 
+            position: absolute; top: 100%; left: 0; width: 100%; background: white; 
+            border: 1px solid #ddd; z-index: 1000; max-height: 200px; overflow-y: auto; 
+            display: none; box-shadow: 0 4px 15px rgba(0,0,0,0.15); border-radius: 0 0 8px 8px;
+        }
+        .sugestao-item { padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+        .sugestao-item:active { background: #f0f8ff; }
 
-        .lista-itens { max-height: 200px; overflow-y: auto; background: #f8f9fa; border: 1px solid #eee; border-radius: 5px; margin: 10px 0; padding: 10px; text-align: left; }
-        .item-linha { display: flex; justify-content: space-between; border-bottom: 1px dashed #ccc; padding: 5px 0; font-size: 0.9em; }
+        /* Carrinho */
+        .carrinho { 
+            background: #f8f9fa; border: 1px dashed #ccc; border-radius: 8px; 
+            padding: 10px; margin-bottom: 10px; 
+            max-height: 250px; overflow-y: auto; flex-grow: 1; 
+        }
         
-        .total-destaque { font-size: 1.6em; color: #27ae60; font-weight: bold; text-align: right; margin-top: 10px; }
+        .item-carrinho { 
+            display: flex; justify-content: space-between; align-items: center; 
+            background: white; padding: 10px; margin-bottom: 6px; border-radius: 6px; 
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05); gap: 8px;
+        }
+        .item-info { flex: 1; font-size: 0.9em; line-height: 1.2; }
+        .item-valor { font-weight: bold; color: #2c3e50; white-space: nowrap; font-size: 0.95em; }
+        .btn-remover { 
+            background: #ffebee; color: #c0392b; border: none; width: 30px; height: 30px; 
+            border-radius: 50%; cursor: pointer; font-weight: bold; display: flex; 
+            align-items: center; justify-content: center; font-size: 1.2em; flex-shrink: 0;
+        }
 
-        /* AÇÕES DO MODAL (3 Botões) */
-        .modal-actions { display: flex; gap: 8px; margin-top: 20px; }
-        
-        .btn-acao { flex: 1; padding: 12px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; color: white; font-size: 0.9em; transition: 0.2s; }
-        
-        .btn-cancel { background: #e74c3c; } /* Vermelho */
-        .btn-cancel:hover { background: #c0392b; }
+        /* Rodapé Fixo */
+        .secao-inferior { flex-shrink: 0; }
+        .total-display { 
+            text-align: right; font-size: 1.8em; font-weight: 800; color: #27ae60; 
+            margin-bottom: 15px; border-top: 2px solid #f0f0f0; padding-top: 10px; 
+        }
+        .area-acoes { 
+            display: flex; gap: 8px; align-items: center; background: #eee; 
+            padding: 8px; border-radius: 8px; margin-bottom: 15px;
+        }
+        .input-valor { 
+            flex: 1; padding: 12px; border: 1px solid #ccc; border-radius: 6px; 
+            font-size: 1.1em; text-align: center; -webkit-appearance: none; 
+        }
+        .btn-completar { 
+            flex: 2; background: #f39c12; color: white; border: none; padding: 12px; 
+            border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 1em; 
+        }
+        .btn-refazer {
+            background: #3498db; color: white; border: none; padding: 12px;
+            border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 1.2em;
+            width: 45px; display: flex; align-items: center; justify-content: center;
+        }
+        .btn-emitir { 
+            width: 100%; background: #27ae60; color: white; padding: 15px; 
+            font-size: 1.2em; font-weight: bold; border: none; border-radius: 8px; 
+            cursor: pointer; box-shadow: 0 4px 0 #219150; 
+        }
+        .btn-emitir:active { transform: translateY(2px); box-shadow: 0 2px 0 #219150; }
+        .btn-emitir:disabled { background: #bdc3c7; box-shadow: none; cursor: not-allowed; }
+        .btn-limpar { 
+            background: none; border: none; color: #95a5a6; cursor: pointer; 
+            text-decoration: underline; margin-top: 10px; display: block; width: 100%; padding: 5px; 
+        }
 
-        .btn-refazer { background: #f39c12; } /* Laranja */
-        .btn-refazer:hover { background: #e67e22; }
+        /* --- MODAL DE QUANTIDADE --- */
+        dialog { 
+            border: none; border-radius: 12px; padding: 20px; width: 85%; max-width: 350px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3); text-align: center;
+        }
+        dialog::backdrop { background: rgba(0,0,0,0.6); }
+        .modal-titulo { font-size: 1.2em; color: #333; margin-bottom: 10px; }
+        .modal-prod-nome { font-weight: bold; color: #2980b9; margin-bottom: 20px; font-size: 1.1em; }
+        .input-qtd { 
+            width: 100px; padding: 10px; font-size: 1.5em; text-align: center; 
+            border: 2px solid #3498db; border-radius: 8px; margin-bottom: 20px;
+        }
+        .modal-btn-area { display: flex; gap: 10px; justify-content: center; }
+        .btn-cancelar { background: #95a5a6; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; }
+        .btn-confirmar { background: #27ae60; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; }
 
-        .btn-confirm { background: #27ae60; flex: 1.5; } /* Verde e maior */
-        .btn-confirm:hover { background: #2ecc71; }
-        
-        .btn-acao:disabled { background: #ccc; cursor: not-allowed; }
+        @media (max-width: 480px) {
+            .container-pdv { padding: 10px; height: auto; min-height: 90vh; }
+            .area-acoes { flex-wrap: wrap; }
+            .input-valor { flex: 100%; margin-bottom: 5px; }
+            .btn-completar { flex: 4; }
+            .btn-refazer { flex: 1; }
+            .total-display { font-size: 2em; text-align: center; }
+        }
 
-        .sucesso-msg { color: #27ae60; font-weight: bold; margin-top: 20px; padding: 15px; background: #eafaf1; border-radius: 8px; }
-        .btn-imprimir { display: inline-block; margin-top: 15px; background: #2c3e50; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; }
+        .sucesso-msg { background: #d4edda; padding: 10px; border-radius: 8px; color: #155724; text-align: center; margin-top: 10px; border: 1px solid #c3e6cb; }
+        .btn-pdf { display: block; background: #2c3e50; color: white; padding: 10px; margin-top: 8px; text-decoration: none; border-radius: 5px; font-weight: bold; }
     </style>
 {% endblock %}
 
 {% block content %}
-    <div class="caixa">
-        <h1>Frente de Caixa</h1>
-        <label style="display:block; margin-bottom:10px; color:#777; font-weight:bold;">Valor Desejado (R$)</label>
-        <input type="number" id="valorInput" placeholder="0,00" step="0.01">
-        
-        <button onclick="simularNota()" class="btn-verificar">
-            SIMULAR NOTA
-        </button>
+<div class="container-pdv">
+    <h1>Frente de Caixa</h1>
 
+    <div class="area-busca">
+        <input type="text" id="buscaInput" class="input-busca" placeholder="🔍 Buscar produto..." autocomplete="off">
+        <div id="listaSugestoes" class="sugestoes-lista"></div>
+    </div>
+
+    <div class="carrinho" id="carrinhoVisual">
+        <div style="text-align: center; color: #bbb; padding: 30px 0;">
+            🛒 Seu carrinho está vazio
+        </div>
+    </div>
+
+    <div class="secao-inferior">
+        <div class="total-display" id="totalDisplay">R$ 0,00</div>
+
+        <div class="area-acoes">
+            <input type="number" id="valorAlvoInput" class="input-valor" placeholder="Meta (R$)" inputmode="decimal">
+            <button class="btn-completar" onclick="completarValor()">⚡ Completar</button>
+            <button class="btn-refazer" onclick="refazerSimulacao()" title="Tentar outros produtos">🔄</button>
+        </div>
+
+        <button class="btn-emitir" id="btnEmitir" onclick="emitirNota()" disabled>EMITIR NOTA</button>
+        <button class="btn-limpar" onclick="limparCarrinho()">Limpar Carrinho</button>
+        
         <div id="status"></div>
     </div>
 
-    <dialog id="modalConfirmacao">
-        <div class="modal-header">
-            <h2 style="margin: 0; color: #333;">Itens Gerados</h2>
-            <div class="meta-valor">Meta: <strong id="metaModal">R$ 0,00</strong></div>
-        </div>
+    <dialog id="modalQuantidade">
+        <div class="modal-titulo">Quantas unidades?</div>
+        <div id="nomeProdModal" class="modal-prod-nome">...</div>
         
-        <div class="lista-itens" id="listaItensModal">
-            </div>
+        <input type="number" id="qtdInputModal" class="input-qtd" value="1" min="1" inputmode="numeric">
         
-        <div class="total-destaque" id="totalModal">Total: R$ 0,00</div>
-
-        <div class="modal-actions">
-            <button class="btn-acao btn-cancel" onclick="fecharModal()">Cancelar</button>
-            <button class="btn-acao btn-refazer" onclick="simularNota()">Refazer</button>
-            <button id="btnEmitirReal" class="btn-acao btn-confirm" onclick="emitirNotaReal()">CONFIRMAR</button>
+        <div class="modal-btn-area">
+            <button class="btn-cancelar" onclick="fecharModalQtd()">Cancelar</button>
+            <button class="btn-confirmar" onclick="confirmarAdicaoManual()">ADICIONAR</button>
         </div>
     </dialog>
-
+    
     {% csrf_token %}
+</div>
 {% endblock %}
 
 {% block scripts %}
-    <script>
-        const modal = document.getElementById('modalConfirmacao');
-        const valorInput = document.getElementById('valorInput');
-        let itensAtuais = [];
+<script>
+    let carrinho = []; 
+    let produtoSelecionadoTemp = null; // Guarda o produto enquanto escolhe qtd
 
-        async function simularNota() {
-            const valor = parseFloat(valorInput.value);
-            if (isNaN(valor) || valor <= 0) { alert("Valor inválido!"); return; }
+    const buscaInput = document.getElementById('buscaInput');
+    const listaSugestoes = document.getElementById('listaSugestoes');
+    const modalQtd = document.getElementById('modalQuantidade');
 
-            const btnSimular = document.querySelector('.btn-verificar');
-            const btnRefazer = document.querySelector('.btn-refazer');
-            
-            if(btnSimular) { btnSimular.disabled = true; btnSimular.innerText = "Calculando..."; }
-            if(btnRefazer) { btnRefazer.disabled = true; btnRefazer.innerText = "..."; }
+    // --- LÓGICA DE BUSCA ---
+    buscaInput.addEventListener('input', async (e) => {
+        const termo = e.target.value;
+        if (termo.length < 2) { listaSugestoes.style.display = 'none'; return; }
 
-            try {
-                const response = await fetch(`/api/produtos/?simular=true&valor=${valor}`);
-                const data = await response.json();
+        const res = await fetch(`/api/produtos/?q=${termo}`);
+        const produtos = await res.json();
 
-                if (data.error) {
-                    alert("Erro: " + data.error);
-                    return;
-                }
-
-                itensAtuais = data.itens;
-                
-                // Passa o valor ALVO também para exibir
-                exibirNoModal(data.itens, data.total, valor);
-                
-                if (!modal.open) {
-                    modal.showModal();
-                }
-
-            } catch (error) {
-                alert("Erro na simulação: " + error.message);
-            } finally {
-                if(btnSimular) { btnSimular.disabled = false; btnSimular.innerText = "SIMULAR NOTA"; }
-                if(btnRefazer) { btnRefazer.disabled = false; btnRefazer.innerText = "Refazer"; }
-            }
-        }
-
-        function exibirNoModal(itens, total, valorAlvo) {
-            const divLista = document.getElementById('listaItensModal');
-            divLista.innerHTML = "";
-            
-            // Atualiza a META (Valor Alvo)
-            document.getElementById('metaModal').innerText = "R$ " + valorAlvo.toFixed(2);
-
-            itens.forEach(item => {
-                divLista.innerHTML += `
-                    <div class="item-linha">
-                        <span><b>${item.quantidade}x</b> ${item.nome}</span>
-                        <span>R$ ${item.valor_total.toFixed(2)}</span>
-                    </div>`;
+        listaSugestoes.innerHTML = '';
+        if (produtos.length > 0) {
+            listaSugestoes.style.display = 'block';
+            produtos.forEach(prod => {
+                const div = document.createElement('div');
+                div.className = 'sugestao-item';
+                div.innerHTML = `
+                    <div style="flex:1">
+                        <div style="font-weight:bold">${prod.nome}</div>
+                        <small style="color:#777">R$ ${prod.preco_unitario.toFixed(2)}</small>
+                    </div>
+                    <div style="font-weight:bold; color:#2980b9">+</div>
+                `;
+                // Ao clicar, abre o modal em vez de adicionar direto
+                div.onclick = () => { abrirModalQtd(prod); };
+                listaSugestoes.appendChild(div);
             });
-            
-            document.getElementById('totalModal').innerText = "Total: R$ " + total.toFixed(2);
+        } else {
+            listaSugestoes.style.display = 'none';
+        }
+    });
+
+    document.addEventListener('click', (e) => {
+        if (e.target !== buscaInput) listaSugestoes.style.display = 'none';
+    });
+
+    // --- LÓGICA DO MODAL DE QUANTIDADE ---
+    function abrirModalQtd(prod) {
+        produtoSelecionadoTemp = prod;
+        document.getElementById('nomeProdModal').innerText = prod.nome;
+        document.getElementById('qtdInputModal').value = 1; // Reseta para 1
+        
+        listaSugestoes.style.display = 'none'; // Esconde sugestões
+        modalQtd.showModal();
+        
+        // Foca no campo de quantidade para digitar direto
+        setTimeout(() => document.getElementById('qtdInputModal').focus(), 100);
+    }
+
+    function fecharModalQtd() {
+        modalQtd.close();
+        produtoSelecionadoTemp = null;
+        buscaInput.value = ''; // Limpa a busca
+    }
+
+    function confirmarAdicaoManual() {
+        if (!produtoSelecionadoTemp) return;
+
+        const qtd = parseInt(document.getElementById('qtdInputModal').value);
+        if (isNaN(qtd) || qtd <= 0) {
+            alert("Quantidade inválida");
+            return;
         }
 
-        function fecharModal() { 
-            modal.close(); 
+        // Adiciona ao carrinho com a quantidade escolhida
+        carrinho.push({
+            id: produtoSelecionadoTemp.id,
+            nome: produtoSelecionadoTemp.nome,
+            preco_unitario: produtoSelecionadoTemp.preco_unitario,
+            quantidade: qtd,
+            valor_total: produtoSelecionadoTemp.preco_unitario * qtd,
+            ncm: produtoSelecionadoTemp.ncm
+        });
+
+        atualizarCarrinho();
+        fecharModalQtd();
+    }
+
+    // --- RESTANTE DA LÓGICA (Simulação, Emissão) ---
+    async function completarValor() {
+        const valorAlvo = parseFloat(document.getElementById('valorAlvoInput').value);
+        const totalAtual = calcularTotal();
+        
+        if (isNaN(valorAlvo) || valorAlvo <= totalAtual) {
+            alert("A meta deve ser maior que o total atual."); return;
         }
 
-        async function emitirNotaReal() {
-            const btn = document.getElementById('btnEmitirReal');
-            const statusDiv = document.getElementById('status');
-            
-            btn.disabled = true; btn.innerText = "Emitindo...";
+        const falta = valorAlvo - totalAtual;
+        const btn = document.querySelector('.btn-completar');
+        const txtOriginal = btn.innerText;
+        btn.innerText = "⏳...";
+        btn.disabled = true;
 
-            try {
-                const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-                
-                const response = await fetch('/emitir-nota/', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrftoken },
-                    body: JSON.stringify({ itens: itensAtuais })
-                });
+        try {
+            const res = await fetch(`/api/produtos/?simular=true&valor=${falta}`);
+            const data = await res.json();
+            if (data.error) { alert(data.error); return; }
+            data.itens.forEach(item => carrinho.push(item));
+            atualizarCarrinho();
+        } catch (e) {
+            alert("Erro de conexão.");
+        } finally {
+            btn.innerText = txtOriginal;
+            btn.disabled = false;
+        }
+    }
 
-                const data = await response.json();
-                modal.close();
+    async function refazerSimulacao() {
+        const valorAlvo = parseFloat(document.getElementById('valorAlvoInput').value);
+        if (isNaN(valorAlvo) || valorAlvo <= 0) { alert("Digite uma meta para refazer."); return; }
+        carrinho = [];
+        atualizarCarrinho();
+        await completarValor();
+    }
 
-                if (response.ok) {
-                    statusDiv.innerHTML = `
-                        <div class="sucesso-msg">
-                            ✅ NOTA DE R$ ${data.valor.toFixed(2)} EMITIDA!<br>
-                            <a href="/imprimir-nota/${data.id_nota}/" target="_blank" class="btn-imprimir">🖨️ IMPRIMIR</a>
-                        </div>`;
-                    valorInput.value = "";
-                } else {
-                    alert("Erro ao emitir: " + data.mensagem);
-                }
-            } catch (error) {
-                alert("Erro de comunicação.");
-            } finally {
-                btn.disabled = false; btn.innerText = "CONFIRMAR";
+    function atualizarCarrinho() {
+        const divCarrinho = document.getElementById('carrinhoVisual');
+        const totalDisplay = document.getElementById('totalDisplay');
+        const btnEmitir = document.getElementById('btnEmitir');
+
+        if (carrinho.length === 0) {
+            divCarrinho.innerHTML = '<div style="text-align: center; color: #bbb; padding: 30px 0;">🛒 Seu carrinho está vazio</div>';
+            totalDisplay.innerText = "R$ 0,00";
+            btnEmitir.disabled = true;
+            btnEmitir.style.background = "#bdc3c7";
+            return;
+        }
+
+        divCarrinho.innerHTML = '';
+        let total = 0;
+
+        carrinho.forEach((item, index) => {
+            total += item.valor_total;
+            divCarrinho.innerHTML += `
+                <div class="item-carrinho">
+                    <div class="item-info">
+                        <strong>${item.quantidade}x</strong> ${item.nome}
+                    </div>
+                    <div class="item-valor">R$ ${item.valor_total.toFixed(2)}</div>
+                    <button class="btn-remover" onclick="removerItem(${index})">×</button>
+                </div>
+            `;
+        });
+        
+        divCarrinho.scrollTop = divCarrinho.scrollHeight;
+        totalDisplay.innerText = "R$ " + total.toFixed(2);
+        btnEmitir.disabled = false;
+        btnEmitir.style.background = "#27ae60";
+    }
+
+    function removerItem(index) {
+        carrinho.splice(index, 1);
+        atualizarCarrinho();
+    }
+
+    function limparCarrinho() {
+        if(confirm("Limpar todo o carrinho?")) {
+            carrinho = [];
+            atualizarCarrinho();
+        }
+    }
+
+    function calcularTotal() {
+        return carrinho.reduce((acc, item) => acc + item.valor_total, 0);
+    }
+
+    async function emitirNota() {
+        const btn = document.getElementById('btnEmitir');
+        const statusDiv = document.getElementById('status');
+        
+        if (!confirm(`Confirmar emissão de R$ ${calcularTotal().toFixed(2)}?`)) return;
+
+        btn.disabled = true; btn.innerText = "🚀 Enviando...";
+
+        try {
+            const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            const res = await fetch('/emitir-nota/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrftoken },
+                body: JSON.stringify({ itens: carrinho })
+            });
+            const data = await res.json();
+
+            if (res.ok) {
+                statusDiv.innerHTML = `
+                    <div class="sucesso-msg">
+                        <h3>✅ Nota Autorizada!</h3>
+                        <a href="/imprimir-nota/${data.id_nota}/" target="_blank" class="btn-pdf">
+                            📄 BAIXAR / IMPRIMIR PDF
+                        </a>
+                    </div>`;
+                carrinho = [];
+                atualizarCarrinho();
+            } else {
+                alert("Erro: " + data.mensagem);
             }
+        } catch (e) {
+            alert("Erro de comunicação");
+        } finally {
+            btn.innerText = "EMITIR NOTA";
+            if(carrinho.length > 0) btn.disabled = false;
         }
-    </script>
+    }
+</script>
 {% endblock %}

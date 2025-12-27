@@ -112,47 +112,35 @@ def listar_notas(request):
     return render(request, 'notas.html', {'notas': notas})
 
 # --- API: SIMULADOR INTELIGENTE COM QUANTIDADES ---
+# --- API: BUSCA HÍBRIDA (Manual e Automática) ---
 def buscar_produtos(request):
+    # 1. MODO SIMULAÇÃO (Inteligente)
     if request.GET.get('simular') == 'true':
         try: valor_alvo = float(request.GET.get('valor', 0))
         except: return JsonResponse({'error': 'Valor inválido'}, status=400)
 
         produtos_disponiveis = list(Produto.objects.filter(preco__gt=0).order_by('preco'))
         if not produtos_disponiveis:
-            return JsonResponse({'error': 'Nenhum produto com preço cadastrado!'}, status=404)
+            return JsonResponse({'error': 'Nenhum produto cadastrado!'}, status=404)
 
         lista_simulada = []
         total_atual = 0.0
 
-        # CONFIGURAÇÃO DE PROBABILIDADE (PESOS)
-        # Números: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-        # Pesos:   1 tem chance 50, 2 tem 15, e vai caindo...
         opcoes_qtd = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
         pesos_qtd  = [50, 15, 10, 5, 5, 3, 3, 3, 3, 3] 
 
         while total_atual < valor_alvo:
             falta = valor_alvo - total_atual
-            
-            # Filtra o que cabe (considerando pelo menos 1 unidade)
             produtos_que_cabem = [p for p in produtos_disponiveis if float(p.preco) <= falta]
             
             if produtos_que_cabem:
                 prod = random.choice(produtos_que_cabem)
                 preco = float(prod.preco)
-                
-                # Sorteia quantidade baseada nos pesos
                 qtd_sorteada = random.choices(opcoes_qtd, weights=pesos_qtd, k=1)[0]
-                
-                # Verifica se a quantidade sorteada cabe no valor que falta
-                # Ex: Sorteou 10, mas só faltam R$ 50 e o produto custa R$ 20. Só cabem 2.
                 max_que_cabe = int(falta // preco)
-                
-                # Usa o menor valor (mas garante pelo menos 1)
                 quantidade_final = min(qtd_sorteada, max_que_cabe)
                 if quantidade_final < 1: quantidade_final = 1
-                
             else:
-                # Se nada cabe, pega o mais barato (1 unidade) para fechar
                 prod = produtos_disponiveis[0] 
                 preco = float(prod.preco)
                 quantidade_final = 1
@@ -173,6 +161,21 @@ def buscar_produtos(request):
             'itens': lista_simulada,
             'total': round(total_atual, 2)
         })
+
+    # 2. MODO BUSCA MANUAL (Por Nome)
+    termo = request.GET.get('q', '')
+    if termo:
+        # Busca produtos que contenham o nome (case insensitive)
+        produtos = Produto.objects.filter(nome__icontains=termo).order_by('nome')[:10]
+        resultados = []
+        for p in produtos:
+            resultados.append({
+                'id': p.id,
+                'nome': p.nome,
+                'preco_unitario': float(p.preco),
+                'ncm': p.ncm
+            })
+        return JsonResponse(resultados, safe=False)
 
     return JsonResponse([], safe=False)
 

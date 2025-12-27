@@ -2,23 +2,29 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Mateco{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <title>{% block title %}Mateco PDV{% endblock %}</title>
     
     <style>
-        body { margin: 0; font-family: sans-serif; background-color: #f4f4f9; display: flex; flex-direction: column; min-height: 100vh; }
+        body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f4f4f9; display: flex; flex-direction: column; min-height: 100vh; }
         
-        /* Navbar simples */
-        nav { background-color: #2c3e50; padding: 1rem; color: white; display: flex; justify-content: space-between; align-items: center; }
-        nav a { color: white; text-decoration: none; margin-left: 15px; font-weight: bold; }
-        nav a:hover { color: #3498db; }
-        .brand { font-size: 1.5em; font-weight: bold; }
+        /* Navbar Otimizada */
+        nav { background-color: #2c3e50; padding: 1rem; color: white; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; }
+        .brand { font-size: 1.3em; font-weight: bold; margin-bottom: 5px; }
+        
+        .nav-links { display: flex; gap: 15px; }
+        .nav-links a { color: white; text-decoration: none; font-weight: 500; font-size: 0.95em; transition: 0.2s; }
+        .nav-links a:hover { color: #3498db; }
 
-        /* Container centralizado */
-        .container { flex: 1; display: flex; justify-content: center; align-items: center; padding: 20px; }
+        .container { flex: 1; display: flex; justify-content: center; align-items: flex-start; padding: 15px; }
         
-        /* Rodapé */
-        footer { background-color: #ecf0f1; color: #7f8c8d; text-align: center; padding: 10px; font-size: 0.9em; }
+        footer { background-color: #ecf0f1; color: #7f8c8d; text-align: center; padding: 15px; font-size: 0.85em; margin-top: auto; }
+
+        /* Ajustes Mobile */
+        @media (max-width: 600px) {
+            nav { flex-direction: column; text-align: center; gap: 15px; padding: 1.5rem 1rem; }
+            .nav-links { flex-direction: row; gap: 10px; justify-content: center; width: 100%; }
+            .nav-links a { background: rgba(255,255,255,0.1); padding: 8px 12px; border-radius: 6px; flex: 1; text-align: center; }
+        }
     </style>
 
     {% block head %}{% endblock %}
@@ -26,11 +32,12 @@
 <body>
 
     <nav>
-        <div class="brand">Mateco Construções</div>
-        <div>
+        <div class="brand">Mateco Sistemas</div>
+        <div class="nav-links">
             <a href="{% url 'home' %}">Início</a>
-            <a href="{% url 'emitir' %}">Emitir Notas</a>
-            <a href="{% url 'listar_notas' %}">Histórico</a> <a href="/admin">Admin</a>
+            <a href="{% url 'emitir' %}">Emitir</a>
+            <a href="{% url 'listar_notas' %}">Histórico</a>
+            <a href="/admin">Admin</a>
         </div>
     </nav>
 
@@ -40,7 +47,7 @@
     </div>
 
     <footer>
-        &copy; 2025 Mateco Sistemas
+        &copy; 2025 Mateco Sistemas - Versão Mobile
     </footer>
 
     {% block scripts %}{% endblock %}
