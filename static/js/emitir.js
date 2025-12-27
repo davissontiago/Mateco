@@ -219,7 +219,6 @@ function mudarModo(modo) {
         painelManual.classList.remove('hidden');
         painelValor.classList.add('hidden');
         
-        // CORREÇÃO: O ID correto no seu HTML é 'buscaInput'
         setTimeout(() => {
             const el = document.getElementById('buscaInput');
             if(el) el.focus();
@@ -230,7 +229,6 @@ function mudarModo(modo) {
         painelManual.classList.add('hidden');
         painelValor.classList.remove('hidden');
         
-        // CORREÇÃO: O ID correto no seu HTML é 'valor-alvo'
         setTimeout(() => {
             const el = document.getElementById('valor-alvo');
             if(el) el.focus();
@@ -247,11 +245,11 @@ async function gerarCarrinhoInteligente() {
     }
 
     const btn = document.querySelector('#painel-valor .btn-adicionar');
+    const txtOriginal = btn.innerText;
     btn.innerText = "⏳...";
     btn.disabled = true;
 
     try {
-        // Chamamos a API para simular o valor total digitado
         const res = await fetch(`/api/produtos/?simular=true&valor=${valorAlvo}`);
         const data = await res.json();
         
@@ -260,14 +258,15 @@ async function gerarCarrinhoInteligente() {
             return; 
         }
 
-        // Limpamos o carrinho atual e adicionamos os novos itens gerados
         carrinho = data.itens;
+        
         atualizarCarrinho();
         
     } catch (e) {
+        console.error("Erro na simulação:", e);
         alert("Erro ao conectar com o servidor.");
     } finally {
-        btn.innerText = "Gerar Itens";
+        btn.innerText = "⚡Gerar";
         btn.disabled = false;
     }
 }
