@@ -59,7 +59,7 @@ def emitir_nota(request):
             itens = dados.get('itens', [])
             forma_pagamento = dados.get('forma_pagamento', '01')
             if not itens: return JsonResponse({'mensagem': 'Carrinho vazio'}, status=400)
-
+            
             sucesso, resultado, valor = NuvemFiscalService.emitir_nfce(itens, forma_pagamento)
 
             if sucesso:
@@ -69,7 +69,7 @@ def emitir_nota(request):
                     serie=resultado.get('serie', 0),
                     chave=resultado.get('chave', ''),
                     valor_total=valor,
-                    url_pdf="", # Não salvamos mais URL, buscamos na hora
+                    url_pdf="", 
                     url_xml="",
                     status='AUTORIZADA'
                 )

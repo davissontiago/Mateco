@@ -172,7 +172,7 @@ function calcularTotal() {
 async function emitirNota() {
     const btn = document.getElementById('btnEmitir');
     const statusDiv = document.getElementById('status');
-    const formaPag = document.getElementById('forma_pagamento').value;
+    const formaPagamento = document.getElementById('formaPagamento').value;
 
     if (!confirm(`Confirmar emissão de R$ ${calcularTotal().toFixed(2)}?`)) return;
 
@@ -185,7 +185,7 @@ async function emitirNota() {
             headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrftoken },
             body: JSON.stringify({ 
                 itens: carrinho,
-                forma_pagamento: formaPag
+                forma_pagamento: formaPagamento
             })
         });
         const data = await res.json();
