@@ -1,17 +1,29 @@
 from django.contrib import admin
 from django.urls import path
-# Importe a nova view buscar_produtos
-from core.views import home, emitir, emitir_nfce_view, baixar_pdf_view, listar_notas, buscar_produtos
+# Importando os nomes corretos agora:
+from core.views import (
+    home, 
+    emitir, 
+    listar_notas, 
+    buscar_produtos, 
+    emitir_nota,   
+    imprimir_nota   
+)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    
+    # Navegação
     path('', home, name='home'),
     path('emitir/', emitir, name='emitir'),
-    path('historico/', listar_notas, name='listar_notas'),
+    path('notas/', listar_notas, name='listar_notas'),
 
-    # --- NOVA ROTA DE PESQUISA ---
+    # APIs (Backend)
     path('api/produtos/', buscar_produtos, name='buscar_produtos'),
-
-    path('emitir-nota/', emitir_nfce_view, name='emitir_nota'),
-    path('imprimir-nota/<str:id_nota>/', baixar_pdf_view, name='imprimir_nota'),
+    
+    # Ação de Emitir (POST)
+    path('emitir-nota/', emitir_nota, name='emitir_nota'), 
+    
+    # Ação de Imprimir (GET)
+    path('imprimir-nota/<int:nota_id>/', imprimir_nota, name='imprimir_nota'),
 ]
