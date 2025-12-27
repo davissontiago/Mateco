@@ -44,7 +44,7 @@
                     <td style="color: #27ae60; font-weight: bold;">R$ {{ nota.valor }}</td>
                     <td><span class="status">{{ nota.status }}</span></td>
                     <td>
-                        <a href="{% url 'imprimir_nota' nota.id_nota %}" target="_blank" class="btn-ver">
+                        <a href="{% url 'imprimir_nota' nota.id %}" target="_blank" class="btn-ver">
                             📄 Ver PDF
                         </a>
                     </td>
