@@ -1,56 +1,63 @@
 {% extends 'base.html' %}
-{% load static %} {% block title %}Frente de Caixa{% endblock %}
+{% load static %} {% block title %}
+  Frente de Caixa
+{% endblock %}
 
 {% block head %}
-    <link rel="stylesheet" href="{% static 'css/emitir.css' %}">
+  <link rel="stylesheet" href="{% static 'css/emitir.css' %}" />
 {% endblock %}
 
 {% block content %}
-<div class="container-pdv">
+  <div class="container-pdv">
     <h1>Frente de Caixa</h1>
 
-    <div class="area-busca">
-        <input type="text" id="buscaInput" class="input-busca" placeholder="🔍 Buscar produto..." autocomplete="off">
-        <div id="listaSugestoes" class="sugestoes-lista"></div>
+    <div class="abas-container">
+      <button class="btn-aba ativo" onclick="mudarModo('manual')" id="btn-manual">🖐️ Busca Manual</button>
+      <button class="btn-aba" onclick="mudarModo('valor')" id="btn-valor">🤖 Carrinho Inteligente</button>
+    </div>
+
+    <div id="painel-manual" class="area-busca">
+      <input type="text" id="buscaInput" class="input-busca" placeholder="🔍 Buscar produto..." onkeyup="buscarProdutos()" autocomplete="off" />
+      <div id="listaSugestoes" class="sugestoes-lista"></div>
+    </div>
+
+    <div id="painel-valor" class="area-busca hidden">
+      <div class="input-valor-group">
+        <input type="number" id="valor-alvo" class="input-busca" placeholder="Ex: 50.00" step="0.01" />
+        <button onclick="gerarCarrinhoInteligente()" class="btn-completar" style="background-color: #e67e22; height: 50px; margin-left: 10px;">⚡Gerar</button>
+      </div>
+      <p style="text-align: center; font-size: 0.85em; color: #666; margin-top: 5px;">O sistema escolherá produtos até atingir este valor.</p>
     </div>
 
     <div class="carrinho" id="carrinhoVisual">
-        <div style="text-align: center; color: #bbb; padding: 30px 0;">
-            🛒 Seu carrinho está vazio
-        </div>
+      <div style="text-align: center; color: #bbb; padding: 30px 0;">🛒 Seu carrinho está vazio</div>
     </div>
 
     <div class="secao-inferior">
-        <div class="total-display" id="totalDisplay">R$ 0,00</div>
+      <div class="total-display" id="totalDisplay">R$ 0,00</div>
 
-        <div class="area-acoes">
-            <input type="number" id="valorAlvoInput" class="input-valor" placeholder="Meta (R$)" inputmode="decimal">
-            <button class="btn-completar" onclick="completarValor()">⚡ Completar</button>
-            <button class="btn-refazer" onclick="refazerSimulacao()" title="Tentar outros produtos">🔄</button>
-        </div>
+      <button class="btn-emitir" id="btnEmitir" onclick="emitirNota()" disabled>EMITIR NOTA</button>
+      <button class="btn-limpar" onclick="limparCarrinho()">Limpar Carrinho</button>
 
-        <button class="btn-emitir" id="btnEmitir" onclick="emitirNota()" disabled>EMITIR NOTA</button>
-        <button class="btn-limpar" onclick="limparCarrinho()">Limpar Carrinho</button>
-        
-        <div id="status"></div>
+      <div id="status"></div>
     </div>
 
     <dialog id="modalQuantidade">
-        <div class="modal-titulo">Quantas unidades?</div>
-        <div id="nomeProdModal" class="modal-prod-nome">...</div>
-        
-        <input type="number" id="qtdInputModal" class="input-qtd" value="1" min="1" inputmode="numeric">
-        
-        <div class="modal-btn-area">
-            <button class="btn-cancelar" onclick="fecharModalQtd()">Cancelar</button>
-            <button class="btn-confirmar" onclick="confirmarAdicaoManual()">ADICIONAR</button>
-        </div>
+      <div class="modal-titulo">Quantas unidades?</div>
+      <div id="nomeProdModal" class="modal-prod-nome">...</div>
+
+      <input type="number" id="qtdInputModal" class="input-qtd" value="1" min="1" inputmode="numeric" />
+
+      <div class="modal-btn-area">
+        <button class="btn-cancelar" onclick="fecharModalQtd()">Cancelar</button>
+        <button class="btn-confirmar" onclick="confirmarAdicaoManual()">ADICIONAR</button>
+      </div>
     </dialog>
-    
+
     {% csrf_token %}
-</div>
+  </div>
 {% endblock %}
 
 {% block scripts %}
-    <script src="{% static 'js/emitir.js' %}"></script>
+  <script src="{% static 'js/emitir.js' %}"></script>
 {% endblock %}

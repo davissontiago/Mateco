@@ -34,6 +34,7 @@ h1 {
     font-size: 1.1em;
     box-sizing: border-box;
     -webkit-appearance: none;
+    appearance: none;
 }
 
 .input-busca:focus {
@@ -155,6 +156,7 @@ h1 {
     font-size: 1.1em;
     text-align: center;
     -webkit-appearance: none;
+    appearance: none;
 }
 
 .btn-completar {
@@ -331,4 +333,41 @@ dialog::backdrop {
     text-decoration: none;
     border-radius: 5px;
     font-weight: bold;
+}
+
+/* Estilo das Abas */
+.abas-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+    gap: 10px;
+}
+
+.btn-aba {
+    padding: 10px 20px;
+    border: 2px solid #3498db;
+    background: transparent;
+    color: #3498db;
+    cursor: pointer;
+    font-weight: bold;
+    border-radius: 5px;
+    transition: all 0.3s;
+}
+
+.btn-aba.ativo {
+    background: #3498db;
+    color: white;
+}
+
+/* Classe vital para o interruptor funcionar */
+.hidden {
+    display: none !important;
+}
+
+/* Ajuste para o grupo de valor alvo */
+.input-valor-group {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    align-items: center;
 }

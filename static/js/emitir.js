@@ -206,3 +206,68 @@ async function emitirNota() {
         if (carrinho.length > 0) btn.disabled = false;
     }
 }
+
+function mudarModo(modo) {
+    const btnManual = document.getElementById('btn-manual');
+    const btnValor = document.getElementById('btn-valor');
+    const painelManual = document.getElementById('painel-manual');
+    const painelValor = document.getElementById('painel-valor');
+
+    if (modo === 'manual') {
+        btnManual.classList.add('ativo');
+        btnValor.classList.remove('ativo');
+        painelManual.classList.remove('hidden');
+        painelValor.classList.add('hidden');
+        
+        // CORREÇÃO: O ID correto no seu HTML é 'buscaInput'
+        setTimeout(() => {
+            const el = document.getElementById('buscaInput');
+            if(el) el.focus();
+        }, 100);
+    } else {
+        btnManual.classList.remove('ativo');
+        btnValor.classList.add('ativo');
+        painelManual.classList.add('hidden');
+        painelValor.classList.remove('hidden');
+        
+        // CORREÇÃO: O ID correto no seu HTML é 'valor-alvo'
+        setTimeout(() => {
+            const el = document.getElementById('valor-alvo');
+            if(el) el.focus();
+        }, 100);
+    }
+}
+
+async function gerarCarrinhoInteligente() {
+    const valorAlvo = parseFloat(document.getElementById('valor-alvo').value);
+
+    if (isNaN(valorAlvo) || valorAlvo <= 0) {
+        alert("Por favor, digite um valor válido para gerar o carrinho.");
+        return;
+    }
+
+    const btn = document.querySelector('#painel-valor .btn-adicionar');
+    btn.innerText = "⏳...";
+    btn.disabled = true;
+
+    try {
+        // Chamamos a API para simular o valor total digitado
+        const res = await fetch(`/api/produtos/?simular=true&valor=${valorAlvo}`);
+        const data = await res.json();
+        
+        if (data.error) { 
+            alert(data.error); 
+            return; 
+        }
+
+        // Limpamos o carrinho atual e adicionamos os novos itens gerados
+        carrinho = data.itens;
+        atualizarCarrinho();
+        
+    } catch (e) {
+        alert("Erro ao conectar com o servidor.");
+    } finally {
+        btn.innerText = "Gerar Itens";
+        btn.disabled = false;
+    }
+}
