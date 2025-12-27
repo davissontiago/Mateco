@@ -1,73 +1,81 @@
 {% extends 'base.html' %}
 
-{% block title %}Emissor de Notas{% endblock %}
+{% block title %}Emissor Inteligente{% endblock %}
 
 {% block head %}
     <style>
-        .caixa { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 400px; margin: 0 auto; text-align: center; }
+        .caixa { background: white; padding: 40px; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); width: 100%; max-width: 400px; margin: 0 auto; text-align: center; }
         
-        h1 { color: #333; font-size: 1.5rem; margin-bottom: 20px; }
+        h1 { color: #2c3e50; font-size: 1.8rem; margin-bottom: 30px; }
         
-        .campo-valor { margin: 20px 0; }
-        label { display: block; font-weight: bold; color: #555; margin-bottom: 5px; text-align: left; }
-        input[type="number"] { 
-            width: 100%; padding: 15px; font-size: 1.8em; text-align: center; 
-            border: 2px solid #ddd; border-radius: 8px; box-sizing: border-box; 
-            color: #2c3e50; font-weight: bold; 
-        }
-        input:focus { border-color: #3498db; outline: none; }
-
-        .btn-verificar { background-color: #f39c12; color: white; border: none; padding: 15px 30px; font-size: 1.2em; border-radius: 5px; cursor: pointer; width: 100%; margin-top: 20px; font-weight: bold; }
-        .btn-verificar:hover { background-color: #e67e22; }
+        input[type="number"] { width: 100%; padding: 15px; font-size: 2em; text-align: center; border: 2px solid #ddd; border-radius: 10px; box-sizing: border-box; color: #2c3e50; font-weight: bold; margin-bottom: 20px;}
+        
+        .btn-verificar { background-color: #3498db; color: white; border: none; padding: 18px; font-size: 1.3em; border-radius: 10px; cursor: pointer; width: 100%; font-weight: bold; }
+        .btn-verificar:hover { background-color: #2980b9; }
 
         /* Modal */
-        dialog { border: none; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); width: 90%; max-width: 400px; padding: 25px; }
-        dialog::backdrop { background: rgba(0,0,0,0.6); }
+        dialog { border: none; border-radius: 15px; box-shadow: 0 15px 40px rgba(0,0,0,0.4); width: 90%; max-width: 450px; padding: 20px; }
+        dialog::backdrop { background: rgba(0,0,0,0.7); }
         
-        .modal-resumo { background: #f8f9fa; padding: 15px; border-radius: 5px; text-align: left; margin: 15px 0; border: 1px solid #eee; }
-        .modal-item { font-size: 0.9em; color: #555; border-bottom: 1px dashed #ccc; padding: 5px 0; display: flex; justify-content: space-between; }
-        .modal-total { font-size: 1.4em; font-weight: bold; color: #27ae60; text-align: right; margin-top: 10px; }
+        /* Cabeçalho do Modal */
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        .meta-valor { font-size: 1.1em; color: #7f8c8d; }
+        .meta-valor strong { color: #2c3e50; }
 
-        .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
-        .btn-cancel { flex: 1; background: #95a5a6; color: white; border: none; padding: 12px; border-radius: 5px; cursor: pointer; font-weight: bold; }
-        .btn-confirm { flex: 1; background: #27ae60; color: white; border: none; padding: 12px; border-radius: 5px; cursor: pointer; font-weight: bold; }
-        .btn-confirm:disabled { background: #ccc; cursor: not-allowed; }
+        .lista-itens { max-height: 200px; overflow-y: auto; background: #f8f9fa; border: 1px solid #eee; border-radius: 5px; margin: 10px 0; padding: 10px; text-align: left; }
+        .item-linha { display: flex; justify-content: space-between; border-bottom: 1px dashed #ccc; padding: 5px 0; font-size: 0.9em; }
+        
+        .total-destaque { font-size: 1.6em; color: #27ae60; font-weight: bold; text-align: right; margin-top: 10px; }
 
-        .sucesso-msg { color: green; font-weight: bold; margin-top: 15px; font-size: 1.1em; }
+        /* AÇÕES DO MODAL (3 Botões) */
+        .modal-actions { display: flex; gap: 8px; margin-top: 20px; }
+        
+        .btn-acao { flex: 1; padding: 12px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; color: white; font-size: 0.9em; transition: 0.2s; }
+        
+        .btn-cancel { background: #e74c3c; } /* Vermelho */
+        .btn-cancel:hover { background: #c0392b; }
+
+        .btn-refazer { background: #f39c12; } /* Laranja */
+        .btn-refazer:hover { background: #e67e22; }
+
+        .btn-confirm { background: #27ae60; flex: 1.5; } /* Verde e maior */
+        .btn-confirm:hover { background: #2ecc71; }
+        
+        .btn-acao:disabled { background: #ccc; cursor: not-allowed; }
+
+        .sucesso-msg { color: #27ae60; font-weight: bold; margin-top: 20px; padding: 15px; background: #eafaf1; border-radius: 8px; }
+        .btn-imprimir { display: inline-block; margin-top: 15px; background: #2c3e50; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; }
     </style>
 {% endblock %}
 
 {% block content %}
     <div class="caixa">
-        <h1>Emissão Rápida</h1>
+        <h1>Frente de Caixa</h1>
+        <label style="display:block; margin-bottom:10px; color:#777; font-weight:bold;">Valor Desejado (R$)</label>
+        <input type="number" id="valorInput" placeholder="0,00" step="0.01">
         
-        <div class="campo-valor">
-            <label for="valorInput">Valor Total da Venda:</label>
-            <input type="number" id="valorInput" placeholder="0,00" step="0.01" min="1">
-        </div>
-        
-        <button onclick="abrirConfirmacao()" class="btn-verificar">
-            VERIFICAR NOTA
+        <button onclick="simularNota()" class="btn-verificar">
+            SIMULAR NOTA
         </button>
 
         <div id="status"></div>
     </div>
 
     <dialog id="modalConfirmacao">
-        <h2 style="margin-top: 0; color: #333;">Confirmação</h2>
-        <p>A nota será gerada automaticamente com os seguintes dados:</p>
-        
-        <div class="modal-resumo">
-            <div class="modal-item">
-                <span>1x PRODUTO GENERICO</span>
-                <span id="resumoValor">R$ 0,00</span>
-            </div>
-            <div class="modal-total">Total: <span id="totalModal">R$ 0,00</span></div>
+        <div class="modal-header">
+            <h2 style="margin: 0; color: #333;">Itens Gerados</h2>
+            <div class="meta-valor">Meta: <strong id="metaModal">R$ 0,00</strong></div>
         </div>
         
+        <div class="lista-itens" id="listaItensModal">
+            </div>
+        
+        <div class="total-destaque" id="totalModal">Total: R$ 0,00</div>
+
         <div class="modal-actions">
-            <button class="btn-cancel" onclick="fecharModal()">Voltar</button>
-            <button id="btnEmitirReal" class="btn-confirm" onclick="emitirNotaReal()">EMITIR AGORA</button>
+            <button class="btn-acao btn-cancel" onclick="fecharModal()">Cancelar</button>
+            <button class="btn-acao btn-refazer" onclick="simularNota()">Refazer</button>
+            <button id="btnEmitirReal" class="btn-acao btn-confirm" onclick="emitirNotaReal()">CONFIRMAR</button>
         </div>
     </dialog>
 
@@ -77,75 +85,99 @@
 {% block scripts %}
     <script>
         const modal = document.getElementById('modalConfirmacao');
-        const inputValor = document.getElementById('valorInput');
+        const valorInput = document.getElementById('valorInput');
+        let itensAtuais = [];
 
-        function abrirConfirmacao() {
-            const valor = parseFloat(inputValor.value);
+        async function simularNota() {
+            const valor = parseFloat(valorInput.value);
+            if (isNaN(valor) || valor <= 0) { alert("Valor inválido!"); return; }
 
-            if (isNaN(valor) || valor <= 0) {
-                alert("Por favor, digite um valor válido!");
-                return;
-            }
-
-            // Atualiza o modal com os dados simulados
-            // (Aqui simulamos o que o Python vai fazer: 1 item com o valor total)
-            document.getElementById('resumoValor').innerText = "R$ " + valor.toFixed(2);
-            document.getElementById('totalModal').innerText = "R$ " + valor.toFixed(2);
+            const btnSimular = document.querySelector('.btn-verificar');
+            const btnRefazer = document.querySelector('.btn-refazer');
             
-            modal.showModal();
+            if(btnSimular) { btnSimular.disabled = true; btnSimular.innerText = "Calculando..."; }
+            if(btnRefazer) { btnRefazer.disabled = true; btnRefazer.innerText = "..."; }
+
+            try {
+                const response = await fetch(`/api/produtos/?simular=true&valor=${valor}`);
+                const data = await response.json();
+
+                if (data.error) {
+                    alert("Erro: " + data.error);
+                    return;
+                }
+
+                itensAtuais = data.itens;
+                
+                // Passa o valor ALVO também para exibir
+                exibirNoModal(data.itens, data.total, valor);
+                
+                if (!modal.open) {
+                    modal.showModal();
+                }
+
+            } catch (error) {
+                alert("Erro na simulação: " + error.message);
+            } finally {
+                if(btnSimular) { btnSimular.disabled = false; btnSimular.innerText = "SIMULAR NOTA"; }
+                if(btnRefazer) { btnRefazer.disabled = false; btnRefazer.innerText = "Refazer"; }
+            }
         }
 
-        function fecharModal() {
-            modal.close();
+        function exibirNoModal(itens, total, valorAlvo) {
+            const divLista = document.getElementById('listaItensModal');
+            divLista.innerHTML = "";
+            
+            // Atualiza a META (Valor Alvo)
+            document.getElementById('metaModal').innerText = "R$ " + valorAlvo.toFixed(2);
+
+            itens.forEach(item => {
+                divLista.innerHTML += `
+                    <div class="item-linha">
+                        <span><b>${item.quantidade}x</b> ${item.nome}</span>
+                        <span>R$ ${item.valor_total.toFixed(2)}</span>
+                    </div>`;
+            });
+            
+            document.getElementById('totalModal').innerText = "Total: R$ " + total.toFixed(2);
+        }
+
+        function fecharModal() { 
+            modal.close(); 
         }
 
         async function emitirNotaReal() {
             const btn = document.getElementById('btnEmitirReal');
             const statusDiv = document.getElementById('status');
-            const valorVenda = parseFloat(inputValor.value);
             
-            // Bloqueia botão para evitar duplo clique
-            btn.disabled = true;
-            btn.innerText = "Processando...";
+            btn.disabled = true; btn.innerText = "Emitindo...";
 
             try {
                 const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-
+                
                 const response = await fetch('/emitir-nota/', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': csrftoken
-                    },
-                    body: JSON.stringify({ valor: valorVenda }) // Envia só o valor!
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrftoken },
+                    body: JSON.stringify({ itens: itensAtuais })
                 });
 
                 const data = await response.json();
-
-                modal.close(); // Fecha o modal
+                modal.close();
 
                 if (response.ok) {
-                    const linkPdf = `/imprimir-nota/${data.id_nota}/`;
                     statusDiv.innerHTML = `
                         <div class="sucesso-msg">
-                            ✅ NOTA DE R$ ${valorVenda.toFixed(2)} AUTORIZADA!<br><br>
-                            <a href="${linkPdf}" target="_blank" style="background: #3498db; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
-                                🖨️ IMPRIMIR CUPOM
-                            </a>
+                            ✅ NOTA DE R$ ${data.valor.toFixed(2)} EMITIDA!<br>
+                            <a href="/imprimir-nota/${data.id_nota}/" target="_blank" class="btn-imprimir">🖨️ IMPRIMIR</a>
                         </div>`;
-                    
-                    // Limpa o campo para a próxima
-                    inputValor.value = ""; 
+                    valorInput.value = "";
                 } else {
                     alert("Erro ao emitir: " + data.mensagem);
                 }
-
             } catch (error) {
-                console.error(error);
-                alert("Erro de comunicação: " + error.message);
+                alert("Erro de comunicação.");
             } finally {
-                btn.disabled = false;
-                btn.innerText = "EMITIR AGORA";
+                btn.disabled = false; btn.innerText = "CONFIRMAR";
             }
         }
     </script>

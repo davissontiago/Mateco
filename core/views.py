@@ -7,6 +7,7 @@ from django.shortcuts import render
 from django.http import JsonResponse, HttpResponse
 from decouple import config
 from .models import NotaFiscal
+from estoque.models import Produto
 
 # --- FUNÇÕES AUXILIARES ---
 
@@ -22,26 +23,47 @@ def pegar_token_acesso():
     if response.status_code == 200: return response.json()['access_token']
     else: raise Exception(f"Erro Auth: {response.text}")
 
-def gerar_nota_json(valor_total):
+def gerar_nota_json(itens_recebidos):
     cnpj = config('CNPJ_EMITENTE')
     ie = config('IE_EMITENTE')
     
-    lista_detalhes = [{
-        "nItem": 1,
-        "prod": {
-            "cProd": "GEN001",
-            "cEAN": "SEM GTIN",
-            "xProd": "PRODUTO GENERICO DIVERSOS",
-            "NCM": "25232910", "CFOP": "5102", "uCom": "UN", "qCom": 1.0,
-            "vUnCom": valor_total, "vProd": valor_total, "cEANTrib": "SEM GTIN",
-            "uTrib": "UN", "qTrib": 1.0, "vUnTrib": valor_total, "indTot": 1
-        },
-        "imposto": {
-            "ICMS": { "ICMSSN102": { "orig": 0, "CSOSN": "102" } },
-            "PIS": { "PISNT": { "CST": "07" } },
-            "COFINS": { "COFINSNT": { "CST": "07" } }
+    lista_detalhes = []
+    valor_total_nota = 0.0
+
+    for i, item in enumerate(itens_recebidos):
+        # Pega dados com suporte a quantidade
+        preco_unit = float(item.get('preco_unitario', item.get('preco')))
+        qtd = int(item.get('quantidade', 1))
+        
+        # Calcula total do item
+        valor_item = round(preco_unit * qtd, 2)
+        valor_total_nota += valor_item
+        
+        ncm_item = item.get('ncm', '25232910').replace('.', '')
+        
+        det = {
+            "nItem": i + 1,
+            "prod": {
+                "cProd": str(item.get('id', 'GEN')),
+                "cEAN": "SEM GTIN",
+                "xProd": item['nome'],
+                "NCM": ncm_item,
+                "CFOP": "5102", "uCom": "UN", 
+                "qCom": float(qtd),       # <--- Quantidade Sorteada
+                "vUnCom": preco_unit,     # <--- Preço Unitário
+                "vProd": valor_item,      # <--- Total do Item
+                "cEANTrib": "SEM GTIN",
+                "uTrib": "UN", "qTrib": float(qtd), "vUnTrib": preco_unit, "indTot": 1
+            },
+            "imposto": {
+                "ICMS": { "ICMSSN102": { "orig": 0, "CSOSN": "102" } },
+                "PIS": { "PISNT": { "CST": "07" } },
+                "COFINS": { "COFINSNT": { "CST": "07" } }
+            }
         }
-    }]
+        lista_detalhes.append(det)
+
+    valor_total_nota = round(valor_total_nota, 2)
 
     return {
         "ambiente": "homologacao",
@@ -62,20 +84,18 @@ def gerar_nota_json(valor_total):
             "emit": { "CNPJ": cnpj, "IE": ie, "CRT": 1 },
             "det": lista_detalhes,
             "total": {
-                # CORREÇÃO AQUI: Adicionados todos os campos obrigatórios zerados
                 "ICMSTot": {
                     "vBC": 0.00, "vICMS": 0.00, "vICMSDeson": 0.00, 
                     "vFCP": 0.00, "vBCST": 0.00, "vST": 0.00, 
                     "vFCPST": 0.00, "vFCPSTRet": 0.00,
-                    "vProd": valor_total, 
-                    "vFrete": 0.00, "vSeg": 0.00, "vDesc": 0.00,
-                    "vII": 0.00, "vIPI": 0.00, "vIPIDevol": 0.00, 
+                    "vProd": valor_total_nota, "vFrete": 0.00, "vSeg": 0.00, 
+                    "vDesc": 0.00, "vII": 0.00, "vIPI": 0.00, "vIPIDevol": 0.00, 
                     "vPIS": 0.00, "vCOFINS": 0.00, "vOutro": 0.00, 
-                    "vNF": valor_total, "vTotTrib": 0.00
+                    "vNF": valor_total_nota, "vTotTrib": 0.00
                 }
             },
             "transp": { "modFrete": 9 },
-            "pag": { "detPag": [ { "tPag": "01", "vPag": valor_total } ] }
+            "pag": { "detPag": [ { "tPag": "01", "vPag": valor_total_nota } ] }
         }
     }
 
@@ -91,24 +111,84 @@ def listar_notas(request):
     notas = NotaFiscal.objects.all()
     return render(request, 'notas.html', {'notas': notas})
 
+# --- API: SIMULADOR INTELIGENTE COM QUANTIDADES ---
+def buscar_produtos(request):
+    if request.GET.get('simular') == 'true':
+        try: valor_alvo = float(request.GET.get('valor', 0))
+        except: return JsonResponse({'error': 'Valor inválido'}, status=400)
+
+        produtos_disponiveis = list(Produto.objects.filter(preco__gt=0).order_by('preco'))
+        if not produtos_disponiveis:
+            return JsonResponse({'error': 'Nenhum produto com preço cadastrado!'}, status=404)
+
+        lista_simulada = []
+        total_atual = 0.0
+
+        # CONFIGURAÇÃO DE PROBABILIDADE (PESOS)
+        # Números: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        # Pesos:   1 tem chance 50, 2 tem 15, e vai caindo...
+        opcoes_qtd = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        pesos_qtd  = [50, 15, 10, 5, 5, 3, 3, 3, 3, 3] 
+
+        while total_atual < valor_alvo:
+            falta = valor_alvo - total_atual
+            
+            # Filtra o que cabe (considerando pelo menos 1 unidade)
+            produtos_que_cabem = [p for p in produtos_disponiveis if float(p.preco) <= falta]
+            
+            if produtos_que_cabem:
+                prod = random.choice(produtos_que_cabem)
+                preco = float(prod.preco)
+                
+                # Sorteia quantidade baseada nos pesos
+                qtd_sorteada = random.choices(opcoes_qtd, weights=pesos_qtd, k=1)[0]
+                
+                # Verifica se a quantidade sorteada cabe no valor que falta
+                # Ex: Sorteou 10, mas só faltam R$ 50 e o produto custa R$ 20. Só cabem 2.
+                max_que_cabe = int(falta // preco)
+                
+                # Usa o menor valor (mas garante pelo menos 1)
+                quantidade_final = min(qtd_sorteada, max_que_cabe)
+                if quantidade_final < 1: quantidade_final = 1
+                
+            else:
+                # Se nada cabe, pega o mais barato (1 unidade) para fechar
+                prod = produtos_disponiveis[0] 
+                preco = float(prod.preco)
+                quantidade_final = 1
+
+            total_item = preco * quantidade_final
+            
+            lista_simulada.append({
+                'id': prod.id,
+                'nome': prod.nome,
+                'preco_unitario': preco,
+                'quantidade': quantidade_final,
+                'valor_total': total_item,
+                'ncm': prod.ncm
+            })
+            total_atual += total_item
+        
+        return JsonResponse({
+            'itens': lista_simulada,
+            'total': round(total_atual, 2)
+        })
+
+    return JsonResponse([], safe=False)
+
 def emitir_nfce_view(request):
     if request.method == "POST":
         try:
             token = pegar_token_acesso()
-            
-            # --- VOLTA A RECEBER APENAS O VALOR ---
             body = json.loads(request.body)
-            try:
-                valor_total = float(body.get('valor', 0))
-            except:
-                return JsonResponse({"status": "erro", "mensagem": "Valor inválido"}, status=400)
+            itens = body.get('itens')
             
-            if valor_total <= 0:
-                return JsonResponse({"status": "erro", "mensagem": "Valor deve ser maior que zero"}, status=400)
+            if not itens: return JsonResponse({"status": "erro", "mensagem": "Lista vazia"}, status=400)
 
-            payload = gerar_nota_json(valor_total)
-            # --------------------------------------
+            # Recalcula total final
+            valor_total_real = sum(float(i['valor_total']) for i in itens)
 
+            payload = gerar_nota_json(itens)
             url_emissao = "https://api.sandbox.nuvemfiscal.com.br/nfce"
             headers = { "Authorization": f"Bearer {token}", "Content-Type": "application/json" }
             
@@ -117,13 +197,10 @@ def emitir_nfce_view(request):
             if resp.status_code == 200:
                 dados = resp.json()
                 NotaFiscal.objects.create(
-                    id_nota=dados.get('id'),
-                    numero=dados.get('numero'),
-                    serie=dados.get('serie'),
-                    valor=valor_total,
-                    status=dados.get('status')
+                    id_nota=dados.get('id'), numero=dados.get('numero'),
+                    serie=dados.get('serie'), valor=valor_total_real, status=dados.get('status')
                 )
-                return JsonResponse({"status": "sucesso", "mensagem": "Nota autorizada!", "id_nota": dados.get('id'), "valor": valor_total})
+                return JsonResponse({"status": "sucesso", "mensagem": "Nota autorizada!", "id_nota": dados.get('id'), "valor": valor_total_real})
             else:
                 return JsonResponse({"status": "erro", "mensagem": resp.text}, status=400)
         except Exception as e:
