@@ -41,7 +41,7 @@
                 <tr>
                     <td><strong>{{ nota.numero }}</strong></td>
                     <td>{{ nota.data_emissao|date:"d/m/Y H:i" }}</td>
-                    <td style="color: #27ae60; font-weight: bold;">R$ {{ nota.valor }}</td>
+                    <td style="color: #27ae60; font-weight: bold;">R$ {{ nota.valor_total }}</td>
                     <td><span class="status">{{ nota.status }}</span></td>
                     <td>
                         <a href="{% url 'imprimir_nota' nota.id %}" target="_blank" class="btn-ver">
