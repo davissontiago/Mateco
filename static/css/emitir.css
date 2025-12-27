@@ -315,13 +315,20 @@ dialog::backdrop {
 }
 
 .sucesso-msg {
+    position: relative;
     background: #d4edda;
-    padding: 10px;
+    padding: 20px;
     border-radius: 8px;
     color: #155724;
     text-align: center;
-    margin-top: 10px;
+    margin-top: 15px;
     border: 1px solid #c3e6cb;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.sucesso-msg span:hover {
+    color: #000;
+    transform: scale(1.2);
 }
 
 .btn-pdf {
@@ -370,4 +377,9 @@ dialog::backdrop {
     gap: 10px;
     justify-content: center;
     align-items: center;
+}
+
+#status {
+    margin-top: 15px;
+    min-height: 50px;
 }

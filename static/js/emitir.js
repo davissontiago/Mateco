@@ -169,12 +169,35 @@ function calcularTotal() {
     return carrinho.reduce((acc, item) => acc + item.valor_total, 0);
 }
 
-async function emitirNota() {
+// PARTE 1: Apenas prepara e abre o modal
+function emitirNota() {
+    const modalConfirm = document.getElementById('modalConfirmacao');
+    const valorDisplay = document.getElementById('valorConfirmacaoModal');
+    const pagDisplay = document.getElementById('pagamentoConfirmacaoModal');
+    const selectPag = document.getElementById('forma_pagamento');
+
+    // Texto da forma de pagamento selecionada
+    const textoPagamento = selectPag.options[selectPag.selectedIndex].text;
+
+    valorDisplay.innerText = "Total: R$ " + calcularTotal().toFixed(2);
+    pagDisplay.innerText = "Forma: " + textoPagamento;
+
+    modalConfirm.showModal();
+
+    // Quando clicar em confirmar dentro do modal, chama o envio real
+    document.getElementById('btnConfirmarFinal').onclick = function () {
+        modalConfirm.close();
+        processarEnvioReal(); // Chama a função com a sua lógica original
+    };
+}
+
+// PARTE 2: Sua lógica original de envio (preservando todos os nomes de variáveis)
+async function processarEnvioReal() {
     const btn = document.getElementById('btnEmitir');
     const statusDiv = document.getElementById('status');
-    const formaPagamento = document.getElementById('formaPagamento').value;
+    const formaPagamento = document.getElementById('forma_pagamento').value;
 
-    if (!confirm(`Confirmar emissão de R$ ${calcularTotal().toFixed(2)}?`)) return;
+    statusDiv.innerHTML = '';
 
     btn.disabled = true; btn.innerText = "🚀 Enviando...";
 
@@ -183,7 +206,7 @@ async function emitirNota() {
         const res = await fetch('/emitir-nota/', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrftoken },
-            body: JSON.stringify({ 
+            body: JSON.stringify({
                 itens: carrinho,
                 forma_pagamento: formaPagamento
             })
@@ -192,19 +215,24 @@ async function emitirNota() {
 
         if (res.ok) {
             statusDiv.innerHTML = `
-                <div class="sucesso-msg">
-                    <h3>✅ Nota Autorizada!</h3>
-                    <a href="/imprimir-nota/${data.id_nota}/" target="_blank" class="btn-pdf">
-                        📄 BAIXAR / IMPRIMIR PDF
-                    </a>
-                </div>`;
+        <div class="sucesso-msg" style="position: relative;">
+            <span onclick="this.parentElement.remove()" style="position: absolute; right: 10px; top: 5px; cursor: pointer; font-weight: bold;">×</span>
+            <h3>✅ Nota Autorizada!</h3>
+            <a href="/imprimir-nota/${data.id_nota}/" target="_blank" class="btn-pdf">
+                📄 BAIXAR / IMPRIMIR PDF
+            </a>
+        </div>`;
             carrinho = [];
             atualizarCarrinho();
         } else {
-            alert("Erro: " + data.mensagem);
+            statusDiv.innerHTML = `
+                <div class="alerta-personalizado alerta-erro">
+                    <span class="btn-fechar-alerta" onclick="this.parentElement.remove()">×</span>
+                    <h3>❌ Erro: ${data.mensagem}</h3>
+                </div>`;
         }
     } catch (e) {
-        alert("Erro de comunicação");
+        statusDiv.innerHTML = `<div class="alerta-personalizado alerta-erro"><h3>⚠️ Erro de comunicação</h3></div>`;
     } finally {
         btn.innerText = "EMITIR NOTA";
         if (carrinho.length > 0) btn.disabled = false;
@@ -222,20 +250,20 @@ function mudarModo(modo) {
         btnValor.classList.remove('ativo');
         painelManual.classList.remove('hidden');
         painelValor.classList.add('hidden');
-        
+
         setTimeout(() => {
             const el = document.getElementById('buscaInput');
-            if(el) el.focus();
+            if (el) el.focus();
         }, 100);
     } else {
         btnManual.classList.remove('ativo');
         btnValor.classList.add('ativo');
         painelManual.classList.add('hidden');
         painelValor.classList.remove('hidden');
-        
+
         setTimeout(() => {
             const el = document.getElementById('valor-alvo');
-            if(el) el.focus();
+            if (el) el.focus();
         }, 100);
     }
 }
@@ -256,16 +284,16 @@ async function gerarCarrinhoInteligente() {
     try {
         const res = await fetch(`/api/produtos/?simular=true&valor=${valorAlvo}`);
         const data = await res.json();
-        
-        if (data.error) { 
-            alert(data.error); 
-            return; 
+
+        if (data.error) {
+            alert(data.error);
+            return;
         }
 
         carrinho = data.itens;
-        
+
         atualizarCarrinho();
-        
+
     } catch (e) {
         console.error("Erro na simulação:", e);
         alert("Erro ao conectar com o servidor.");

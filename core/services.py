@@ -98,6 +98,16 @@ class NuvemFiscalService:
                 }
                 detalhes.append(detalhe)
                 valor_total_nota += total_item
+                
+            det_pag = {
+                "tPag": forma_pagamento, 
+                "vPag": round(valor_total_nota, 2)
+            }
+            
+            if forma_pagamento in ["03", "04", "17"]:
+                det_pag["card"] = {
+                    "tpIntegra": 2  # 2 - Não integrado (Uso de maquininha POS)
+                }
 
             data_emissao = datetime.now().astimezone().isoformat()
 
@@ -157,7 +167,7 @@ class NuvemFiscalService:
                         }
                     },
                     "transp": {"modFrete": 9},
-                    "pag": {"detPag": [{"tPag": forma_pagamento, "vPag": valor_total_nota}]},
+                    "pag": {"detPag": [det_pag] },
                 },
             }
 

@@ -64,6 +64,17 @@
       </div>
     </dialog>
 
+    <dialog id="modalConfirmacao">
+      <div class="modal-titulo">Confirmar Emissão?</div>
+      <div style="font-size: 1.5rem; font-weight: bold; color: #27ae60; margin: 20px 0;" id="valorConfirmacaoModal">R$ 0,00</div>
+      <div id="pagamentoConfirmacaoModal" style="color: #666; margin-bottom: 20px; font-weight: bold;"></div>
+
+      <div class="modal-btn-area">
+        <button class="btn-cancelar" onclick="document.getElementById('modalConfirmacao').close()">VOLTAR</button>
+        <button class="btn-confirmar" id="btnConfirmarFinal" style="background: #27ae60;">CONFIRMAR</button>
+      </div>
+    </dialog>
+
     {% csrf_token %}
   </div>
 {% endblock %}
