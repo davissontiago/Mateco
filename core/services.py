@@ -1,30 +1,36 @@
 import requests
 import base64
 import json
-import random
 from datetime import datetime
 from decouple import config
+from .models import NotaFiscal
+
 
 class NuvemFiscalService:
-    
+
     @staticmethod
     def pegar_token():
-        client_id = config('NUVEM_CLIENT_ID')
-        client_secret = config('NUVEM_CLIENT_SECRET')
+        client_id = config("NUVEM_CLIENT_ID")
+        client_secret = config("NUVEM_CLIENT_SECRET")
         url = "https://auth.nuvemfiscal.com.br/oauth/token"
-        
+
         credenciais = f"{client_id}:{client_secret}"
         credenciais_b64 = base64.b64encode(credenciais.encode()).decode()
-        
+
         headers = {
             "Authorization": f"Basic {credenciais_b64}",
-            "Content-Type": "application/x-www-form-urlencoded"
+            "Content-Type": "application/x-www-form-urlencoded",
         }
-        
+
         try:
-            resp = requests.post(url, headers=headers, data={"grant_type": "client_credentials", "scope": "nfce"}, timeout=30)
+            resp = requests.post(
+                url,
+                headers=headers,
+                data={"grant_type": "client_credentials", "scope": "nfce"},
+                timeout=30,
+            )
             if resp.status_code == 200:
-                return resp.json()['access_token']
+                return resp.json()["access_token"]
             else:
                 raise Exception(f"Erro Auth: {resp.text}")
         except Exception as e:
@@ -34,97 +40,143 @@ class NuvemFiscalService:
     def emitir_nfce(itens_carrinho):
         try:
             token = NuvemFiscalService.pegar_token()
-            
+
             # --- DADOS DA EMPRESA ---
-            try: crt_valor = int(config('EMPRESA_CRT', default='1'))
-            except: crt_valor = 1
+            try:
+                crt_valor = int(config("EMPRESA_CRT", default="1"))
+            except:
+                crt_valor = 1
 
             emitente_data = {
-                "CNPJ": config('CNPJ_EMITENTE'),
-                "xNome": config('EMPRESA_NOME', default='Minha Empresa'),
+                "CNPJ": config("CNPJ_EMITENTE"),
+                "xNome": config("EMPRESA_NOME", default="Minha Empresa"),
                 "enderEmit": {
-                    "xLgr": config('EMPRESA_LOGRADOURO', default='Rua Principal'),
-                    "nro": config('EMPRESA_NUMERO', default='100'),
-                    "xBairro": config('EMPRESA_BAIRRO', default='Centro'),
-                    "cMun": config('EMPRESA_COD_MUNICIPIO', default='2111300'),
-                    "xMun": config('EMPRESA_MUNICIPIO', default='Cidade'),
-                    "UF": config('EMPRESA_UF', default='MA'),
-                    "CEP": config('EMPRESA_CEP', default='65000000'),
+                    "xLgr": config("EMPRESA_LOGRADOURO", default="Rua Principal"),
+                    "nro": config("EMPRESA_NUMERO", default="100"),
+                    "xBairro": config("EMPRESA_BAIRRO", default="Centro"),
+                    "cMun": config("EMPRESA_COD_MUNICIPIO", default="2111300"),
+                    "xMun": config("EMPRESA_MUNICIPIO", default="Cidade"),
+                    "UF": config("EMPRESA_UF", default="MA"),
+                    "CEP": config("EMPRESA_CEP", default="65000000"),
                     "cPais": "1058",
-                    "xPais": "BRASIL"
+                    "xPais": "BRASIL",
                 },
-                "IE": config('IE_EMITENTE'),
-                "CRT": crt_valor 
+                "IE": config("IE_EMITENTE"),
+                "CRT": crt_valor,
             }
 
             detalhes = []
             valor_total_nota = 0.0
 
             for i, item in enumerate(itens_carrinho):
-                total_item = float(item['valor_total'])
-                preco_unit = float(item['preco_unitario'])
-                
+                total_item = float(item["valor_total"])
+                preco_unit = float(item["preco_unitario"])
+
                 detalhe = {
                     "nItem": i + 1,
                     "prod": {
-                        "cProd": str(item['id']),
+                        "cProd": str(item["id"]),
                         "cEAN": "SEM GTIN",
-                        "xProd": item['nome'],
-                        "NCM": item.get('ncm', '00000000'),
+                        "xProd": item["nome"],
+                        "NCM": item.get("ncm", "00000000"),
                         "CFOP": "5102",
                         "uCom": "UN",
-                        "qCom": float(item['quantidade']),
+                        "qCom": float(item["quantidade"]),
                         "vUnCom": preco_unit,
                         "vProd": total_item,
                         "cEANTrib": "SEM GTIN",
                         "uTrib": "UN",
-                        "qTrib": float(item['quantidade']),
+                        "qTrib": float(item["quantidade"]),
                         "vUnTrib": preco_unit,
-                        "indTot": 1
+                        "indTot": 1,
                     },
                     "imposto": {
-                        "ICMS": { "ICMSSN102": { "orig": 0, "CSOSN": "102" } },
-                        "PIS": { "PISNT": { "CST": "07" } },
-                        "COFINS": { "COFINSNT": { "CST": "07" } }
-                    }
+                        "ICMS": {"ICMSSN102": {"orig": 0, "CSOSN": "102"}},
+                        "PIS": {"PISNT": {"CST": "07"}},
+                        "COFINS": {"COFINSNT": {"CST": "07"}},
+                    },
                 }
                 detalhes.append(detalhe)
                 valor_total_nota += total_item
 
             data_emissao = datetime.now().astimezone().isoformat()
-            numero_nota = random.randint(1, 99999999)
+
+            ultima_nota = NotaFiscal.objects.order_by("-numero").first()
+
+            if ultima_nota:
+                numero_nota = ultima_nota.numero + 1
+            else:
+                numero_nota = 1
 
             payload = {
                 "ambiente": "homologacao",
                 "infNFe": {
                     "versao": "4.00",
                     "ide": {
-                        "cUF": 21, "natOp": "VENDA", "mod": 65, "serie": 1,
-                        "nNF": numero_nota, "dhEmi": data_emissao, "tpNF": 1, "idDest": 1,
-                        "cMunFG": config('EMPRESA_COD_MUNICIPIO', default='2111300'),
-                        "tpImp": 4, "tpEmis": 1, "tpAmb": 2, "finNFe": 1,
-                        "indFinal": 1, "indPres": 1, "procEmi": 0, "verProc": "1.0"
+                        "cUF": 21,
+                        "natOp": "VENDA",
+                        "mod": 65,
+                        "serie": 2,
+                        "nNF": numero_nota,
+                        "dhEmi": data_emissao,
+                        "tpNF": 1,
+                        "idDest": 1,
+                        "cMunFG": config("EMPRESA_COD_MUNICIPIO", default="2111300"),
+                        "tpImp": 4,
+                        "tpEmis": 1,
+                        "tpAmb": 2,
+                        "finNFe": 1,
+                        "indFinal": 1,
+                        "indPres": 1,
+                        "procEmi": 0,
+                        "verProc": "1.0",
                     },
-                    "emit": emitente_data, "det": detalhes,
+                    "emit": emitente_data,
+                    "det": detalhes,
                     "total": {
                         "ICMSTot": {
-                            "vBC": 0.00, "vICMS": 0.00, "vICMSDeson": 0.00, "vFCP": 0.00, "vBCST": 0.00, "vST": 0.00, "vFCPST": 0.00, "vFCPSTRet": 0.00, "vProd": valor_total_nota, "vFrete": 0.00, "vSeg": 0.00, "vDesc": 0.00, "vII": 0.00, "vIPI": 0.00, "vIPIDevol": 0.00, "vPIS": 0.00, "vCOFINS": 0.00, "vOutro": 0.00, "vNF": valor_total_nota
+                            "vBC": 0.00,
+                            "vICMS": 0.00,
+                            "vICMSDeson": 0.00,
+                            "vFCP": 0.00,
+                            "vBCST": 0.00,
+                            "vST": 0.00,
+                            "vFCPST": 0.00,
+                            "vFCPSTRet": 0.00,
+                            "vProd": valor_total_nota,
+                            "vFrete": 0.00,
+                            "vSeg": 0.00,
+                            "vDesc": 0.00,
+                            "vII": 0.00,
+                            "vIPI": 0.00,
+                            "vIPIDevol": 0.00,
+                            "vPIS": 0.00,
+                            "vCOFINS": 0.00,
+                            "vOutro": 0.00,
+                            "vNF": valor_total_nota,
                         }
                     },
-                    "transp": { "modFrete": 9 },
-                    "pag": { "detPag": [{ "tPag": "01", "vPag": valor_total_nota }] }
-                }
+                    "transp": {"modFrete": 9},
+                    "pag": {"detPag": [{"tPag": "01", "vPag": valor_total_nota}]},
+                },
             }
 
             url = "https://api.sandbox.nuvemfiscal.com.br/nfce"
-            headers = { "Authorization": f"Bearer {token}", "Content-Type": "application/json" }
+            headers = {
+                "Authorization": f"Bearer {token}",
+                "Content-Type": "application/json",
+            }
             resp = requests.post(url, json=payload, headers=headers, timeout=30)
-            
-            try: resp_data = resp.json()
-            except: return False, f"Erro Crítico ({resp.status_code}): {resp.text}", 0.0
 
-            if resp_data.get('status') == 'rejeitado':
-                motivo = resp_data.get('autorizacao', {}).get('motivo_status', 'Motivo desconhecido')
+            try:
+                resp_data = resp.json()
+            except:
+                return False, f"Erro Crítico ({resp.status_code}): {resp.text}", 0.0
+
+            if resp_data.get("status") == "rejeitado":
+                motivo = resp_data.get("autorizacao", {}).get(
+                    "motivo_status", "Motivo desconhecido"
+                )
                 return False, f"REJEIÇÃO: {motivo}", 0.0
 
             if resp.status_code in [200, 201]:
@@ -144,14 +196,11 @@ class NuvemFiscalService:
             token = NuvemFiscalService.pegar_token()
             # CORREÇÃO: Endpoint correto é /pdf, não /danfe
             url = f"https://api.sandbox.nuvemfiscal.com.br/nfce/{id_nota_nuvem}/pdf"
-            
-            headers = { "Authorization": f"Bearer {token}" }
-            
-            # Debug: Mostra no terminal qual URL está tentando
-            print(f"Baixando PDF de: {url}")
-            
+
+            headers = {"Authorization": f"Bearer {token}"}
+
             response = requests.get(url, headers=headers, timeout=30)
-            
+
             if response.status_code == 200:
                 return response.content, None
             else:
