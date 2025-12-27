@@ -89,9 +89,11 @@ USE_TZ = True
 # --- ARQUIVOS ESTÁTICOS (CSS, JS, IMAGENS) ---
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+if not DEBUG:
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Diz ao Django para procurar arquivos na pasta 'static' na raiz do projeto
 STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
+
