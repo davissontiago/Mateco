@@ -36,6 +36,16 @@
     <div class="secao-inferior">
       <div class="total-display" id="totalDisplay">R$ 0,00</div>
 
+      <div class="area-pagamento" style="margin-bottom: 15px;">
+        <label for="forma_pagamento" style="font-weight: bold; display: block; margin-bottom: 5px;">Forma de Pagamento:</label>
+        <select id="forma_pagamento" class="input-busca" style="width: 100%; height: 45px;">
+          <option value="01">01 - Dinheiro</option>
+          <option value="03">03 - Cartão de Crédito</option>
+          <option value="04">04 - Cartão de Débito</option>
+          <option value="17">17 - PIX</option>
+        </select>
+      </div>
+
       <button class="btn-emitir" id="btnEmitir" onclick="emitirNota()" disabled>EMITIR NOTA</button>
       <button class="btn-limpar" onclick="limparCarrinho()">Limpar Carrinho</button>
 

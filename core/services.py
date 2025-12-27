@@ -37,7 +37,7 @@ class NuvemFiscalService:
             raise Exception(f"Falha na autenticação: {str(e)}")
 
     @staticmethod
-    def emitir_nfce(itens_carrinho):
+    def emitir_nfce(itens_carrinho, forma_pagamento="01"):
         try:
             token = NuvemFiscalService.pegar_token()
 
@@ -157,7 +157,7 @@ class NuvemFiscalService:
                         }
                     },
                     "transp": {"modFrete": 9},
-                    "pag": {"detPag": [{"tPag": "01", "vPag": valor_total_nota}]},
+                    "pag": {"detPag": [{"tPag": forma_pagamento, "vPag": valor_total_nota}]},
                 },
             }
 

@@ -57,9 +57,10 @@ def emitir_nota(request):
         try:
             dados = json.loads(request.body)
             itens = dados.get('itens', [])
+            forma_pagamento = dados.get('forma_pagamento', '01')
             if not itens: return JsonResponse({'mensagem': 'Carrinho vazio'}, status=400)
 
-            sucesso, resultado, valor = NuvemFiscalService.emitir_nfce(itens)
+            sucesso, resultado, valor = NuvemFiscalService.emitir_nfce(itens, forma_pagamento)
 
             if sucesso:
                 nota = NotaFiscal.objects.create(
