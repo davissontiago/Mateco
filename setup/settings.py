@@ -1,34 +1,34 @@
 from pathlib import Path
+import os
 import dj_database_url
-from decouple import config  # <--- FALTAVA ESSA LINHA IMPORTANTE
+from decouple import config
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
+# --- CAMINHOS (PATHS) ---
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# SECURITY WARNING: keep the secret key used in production secret!
+# --- SEGURANÇA ---
 SECRET_KEY = config('SECRET_KEY', default='django-insecure-cn=0gd6kzc!x8)b3wj22sx-m0*%njdfc=^jq-rrz$lnvjr^nvl')
-
-# SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=True, cast=bool)
+ALLOWED_HOSTS = ['*']
 
-ALLOWED_HOSTS = ['*'] # <--- Coloque '*' para aceitar conexões da Vercel ou local
-
-# Application definition
-
+# --- APLICAÇÕES ---
 INSTALLED_APPS = [
+    # Apps Padrão Django
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    
+    # Seus Apps
     'core',
-    'estoque', # <--- TIREI O COMENTÁRIO (se a pasta estoque existir)
+    'estoque',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware', # Essencial para Vercel/Produção
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -56,7 +56,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'setup.wsgi.application'
 
-# Database
+# --- BANCO DE DADOS ---
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -64,8 +64,7 @@ DATABASES = {
     }
 }
 
-# Configuração para o Postgres da Vercel
-# Ele só ativa se encontrar a variável DATABASE_URL no arquivo .env
+# Configuração para PostgreSQL (Produção/Vercel)
 if config('DATABASE_URL', default=None):
     DATABASES['default'] = dj_database_url.config(
         default=config('DATABASE_URL'),
@@ -73,31 +72,26 @@ if config('DATABASE_URL', default=None):
         ssl_require=True
     )
 
-# Password validation
+# --- VALIDAÇÃO DE SENHA ---
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
-# Internationalization
+# --- INTERNACIONALIZAÇÃO ---
 LANGUAGE_CODE = 'pt-br'
 TIME_ZONE = 'America/Sao_Paulo'
 USE_I18N = True
 USE_TZ = True
 
-# Static files (CSS, JavaScript, Images)
+# --- ARQUIVOS ESTÁTICOS (CSS, JS, IMAGENS) ---
 STATIC_URL = 'static/'
-
-import os
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+# Diz ao Django para procurar arquivos na pasta 'static' na raiz do projeto
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+]
