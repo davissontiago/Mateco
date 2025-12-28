@@ -5,5 +5,6 @@ python3 manage.py collectstatic --noinput
 
 # Cria a pasta public
 mkdir -p public
-# Cria um arquivo simples dentro dela para o Vercel validar o build
-echo "Build Sucesso" > public/index.html
+
+# Cria um arquivo qualquer (QUE NÃO SEJA index.html) para o Vercel não reclamar que a pasta está vazia
+echo "Build Check" > public/build_check.txt
