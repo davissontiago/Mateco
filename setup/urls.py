@@ -1,6 +1,5 @@
 from django.contrib import admin
 from django.urls import path
-# Importando os nomes corretos agora:
 from core.views import (
     home, 
     emitir, 
@@ -13,17 +12,13 @@ from core.views import (
 urlpatterns = [
     path('admin/', admin.site.urls),
     
-    # Navegação
     path('', home, name='home'),
     path('emitir/', emitir, name='emitir'),
     path('notas/', listar_notas, name='listar_notas'),
 
-    # APIs (Backend)
     path('api/produtos/', buscar_produtos, name='buscar_produtos'),
     
-    # Ação de Emitir (POST)
     path('emitir-nota/', emitir_nota, name='emitir_nota'), 
     
-    # Ação de Imprimir (GET)
     path('imprimir-nota/<int:nota_id>/', imprimir_nota, name='imprimir_nota'),
 ]

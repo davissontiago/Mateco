@@ -3,17 +3,13 @@ import os
 import dj_database_url
 from decouple import config
 
-# --- CAMINHOS (PATHS) ---
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# --- SEGURANÇA ---
 SECRET_KEY = config('SECRET_KEY', default='django-insecure-cn=0gd6kzc!x8)b3wj22sx-m0*%njdfc=^jq-rrz$lnvjr^nvl')
 DEBUG = config('DEBUG', default=True, cast=bool)
 ALLOWED_HOSTS = ['*']
 
-# --- APLICAÇÕES ---
 INSTALLED_APPS = [
-    # Apps Padrão Django
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -21,14 +17,13 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     
-    # Seus Apps
     'core',
     'estoque',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware', # Essencial para Vercel/Produção
+    'whitenoise.middleware.WhiteNoiseMiddleware', 
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -56,7 +51,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'setup.wsgi.application'
 
-# --- BANCO DE DADOS ---
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -64,7 +58,6 @@ DATABASES = {
     }
 }
 
-# Configuração para PostgreSQL (Produção/Vercel)
 if config('DATABASE_URL', default=None):
     DATABASES['default'] = dj_database_url.config(
         default=config('DATABASE_URL'),
@@ -72,7 +65,6 @@ if config('DATABASE_URL', default=None):
         ssl_require=True
     )
 
-# --- VALIDAÇÃO DE SENHA ---
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
@@ -80,20 +72,17 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
-# --- INTERNACIONALIZAÇÃO ---
 LANGUAGE_CODE = 'pt-br'
 TIME_ZONE = 'America/Sao_Paulo'
 USE_I18N = True
 USE_TZ = True 
 
-# --- ARQUIVOS ESTÁTICOS (CSS, JS, IMAGENS) ---
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
     
 if not DEBUG:
     STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
-# Diz ao Django para procurar arquivos na pasta 'static' na raiz do projeto
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
 ]

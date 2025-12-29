@@ -1,11 +1,9 @@
 let carrinho = [];
-let produtoSelecionadoTemp = null; // Guarda o produto enquanto escolhe qtd
-
+let produtoSelecionadoTemp = null; 
 const buscaInput = document.getElementById('buscaInput');
 const listaSugestoes = document.getElementById('listaSugestoes');
 const modalQtd = document.getElementById('modalQuantidade');
 
-// --- LÓGICA DE BUSCA ---
 buscaInput.addEventListener('input', async (e) => {
     const termo = e.target.value;
     if (termo.length < 2) { listaSugestoes.style.display = 'none'; return; }
@@ -26,7 +24,6 @@ buscaInput.addEventListener('input', async (e) => {
                 </div>
                 <div style="font-weight:bold; color:#2980b9">+</div>
             `;
-            // Ao clicar, abre o modal em vez de adicionar direto
             div.onclick = () => { abrirModalQtd(prod); };
             listaSugestoes.appendChild(div);
         });
@@ -39,23 +36,21 @@ document.addEventListener('click', (e) => {
     if (e.target !== buscaInput) listaSugestoes.style.display = 'none';
 });
 
-// --- LÓGICA DO MODAL DE QUANTIDADE ---
 function abrirModalQtd(prod) {
     produtoSelecionadoTemp = prod;
     document.getElementById('nomeProdModal').innerText = prod.nome;
-    document.getElementById('qtdInputModal').value = 1; // Reseta para 1
+    document.getElementById('qtdInputModal').value = 1; 
 
-    listaSugestoes.style.display = 'none'; // Esconde sugestões
+    listaSugestoes.style.display = 'none'; 
     modalQtd.showModal();
 
-    // Foca no campo de quantidade para digitar direto
     setTimeout(() => document.getElementById('qtdInputModal').focus(), 100);
 }
 
 function fecharModalQtd() {
     modalQtd.close();
     produtoSelecionadoTemp = null;
-    buscaInput.value = ''; // Limpa a busca
+    buscaInput.value = ''; 
 }
 
 function confirmarAdicaoManual() {
@@ -67,7 +62,6 @@ function confirmarAdicaoManual() {
         return;
     }
 
-    // Adiciona ao carrinho com a quantidade escolhida
     carrinho.push({
         id: produtoSelecionadoTemp.id,
         nome: produtoSelecionadoTemp.nome,
@@ -81,7 +75,6 @@ function confirmarAdicaoManual() {
     fecharModalQtd();
 }
 
-// --- RESTANTE DA LÓGICA (Simulação, Emissão) ---
 async function completarValor() {
     const valorAlvo = parseFloat(document.getElementById('valorAlvoInput').value);
     const totalAtual = calcularTotal();
@@ -169,14 +162,12 @@ function calcularTotal() {
     return carrinho.reduce((acc, item) => acc + item.valor_total, 0);
 }
 
-// PARTE 1: Apenas prepara e abre o modal
 function emitirNota() {
     const modalConfirm = document.getElementById('modalConfirmacao');
     const valorDisplay = document.getElementById('valorConfirmacaoModal');
     const pagDisplay = document.getElementById('pagamentoConfirmacaoModal');
     const selectPag = document.getElementById('forma_pagamento');
 
-    // Texto da forma de pagamento selecionada
     const textoPagamento = selectPag.options[selectPag.selectedIndex].text;
 
     valorDisplay.innerText = "Total: R$ " + calcularTotal().toFixed(2);
@@ -184,14 +175,12 @@ function emitirNota() {
 
     modalConfirm.showModal();
 
-    // Quando clicar em confirmar dentro do modal, chama o envio real
     document.getElementById('btnConfirmarFinal').onclick = function () {
         modalConfirm.close();
-        processarEnvioReal(); // Chama a função com a sua lógica original
+        processarEnvioReal(); 
     };
 }
 
-// PARTE 2: Sua lógica original de envio (preservando todos os nomes de variáveis)
 async function processarEnvioReal() {
     const btn = document.getElementById('btnEmitir');
     const statusDiv = document.getElementById('status');

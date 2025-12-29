@@ -41,7 +41,6 @@ class NuvemFiscalService:
         try:
             token = NuvemFiscalService.pegar_token()
 
-            # --- DADOS DA EMPRESA ---
             try:
                 crt_valor = int(config("EMPRESA_CRT", default="1"))
             except:
@@ -106,7 +105,7 @@ class NuvemFiscalService:
             
             if forma_pagamento in ["03", "04", "17"]:
                 det_pag["card"] = {
-                    "tpIntegra": 2  # 2 - Não integrado (Uso de maquininha POS)
+                    "tpIntegra": 2  
                 }
 
             data_emissao = datetime.now().astimezone().isoformat()
@@ -204,7 +203,6 @@ class NuvemFiscalService:
         """
         try:
             token = NuvemFiscalService.pegar_token()
-            # CORREÇÃO: Endpoint correto é /pdf, não /danfe
             url = f"https://api.sandbox.nuvemfiscal.com.br/nfce/{id_nota_nuvem}/pdf"
 
             headers = {"Authorization": f"Bearer {token}"}

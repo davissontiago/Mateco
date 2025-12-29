@@ -1,13 +1,11 @@
 import json
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import JsonResponse, HttpResponse # <--- Adicione HttpResponse
+from django.http import JsonResponse, HttpResponse 
 from django.views.decorators.csrf import csrf_exempt
 from .models import NotaFiscal
 from estoque.models import Produto
 from .utils import simular_carrinho_inteligente
 from .services import NuvemFiscalService 
-
-# ... (Home, Emitir, Listar Notas, Buscar Produtos IGUAIS) ...
 
 def home(request): return render(request, 'index.html')
 def emitir(request): return render(request, 'emitir.html')
@@ -16,7 +14,6 @@ def listar_notas(request):
     return render(request, 'notas.html', {'notas': notas})
     
 def buscar_produtos(request):
-    # (Código igual ao anterior)
     if request.GET.get('simular') == 'true':
         try: valor = float(request.GET.get('valor', 0))
         except: return JsonResponse({'error': 'Valor inválido'}, status=400)
@@ -31,14 +28,12 @@ def buscar_produtos(request):
         return JsonResponse([{'id': p.id, 'nome': p.nome, 'preco_unitario': float(p.preco), 'ncm': p.ncm} for p in prods], safe=False)
     return JsonResponse([], safe=False)
 
-# --- AQUI MUDA: Imprimir Nota buscando na hora ---
 def imprimir_nota(request, nota_id):
     nota = get_object_or_404(NotaFiscal, id=nota_id)
     
     if not nota.id_nota:
         return JsonResponse({'error': 'Esta nota não possui ID da Nuvem Fiscal.'}, status=404)
 
-    # Agora esperamos duas variáveis: o PDF e o Erro
     pdf_content, erro_msg = NuvemFiscalService.baixar_pdf(nota.id_nota)
     
     if pdf_content:
@@ -46,11 +41,9 @@ def imprimir_nota(request, nota_id):
         response['Content-Disposition'] = f'inline; filename="nota_{nota.numero}.pdf"'
         return response
     
-    # Se falhar, mostra o erro detalhado que veio da API
     return JsonResponse({'error': f'Falha ao baixar PDF: {erro_msg}'}, status=400)
 
 
-# --- API Emitir (Sem os prints de debug agora) ---
 @csrf_exempt
 def emitir_nota(request):
     if request.method == 'POST':
