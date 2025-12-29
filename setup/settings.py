@@ -95,6 +95,6 @@ if not DEBUG:
 
 # Diz ao Django para procurar arquivos na pasta 'static' na raiz do projeto
 STATICFILES_DIRS = [
-    BASE_DIR / "static",
+    os.path.join(BASE_DIR, 'static'),
 ]
 
