@@ -6,3 +6,7 @@ venv/
 
 # Banco de dados local
 db.sqlite3
+
+# Arquivos estáticos e mídia (upload de usuários)
+media/
+staticfiles/
