@@ -95,3 +95,8 @@ STORAGES = {
     },
 }
 
+print(">>> SETTINGS CARREGADO:", __file__)
+print(">>> STATIC_ROOT:", STATIC_ROOT)
+print(">>> STATICFILES_DIRS:", STATICFILES_DIRS)
+
+
