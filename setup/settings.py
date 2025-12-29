@@ -87,7 +87,7 @@ USE_I18N = True
 USE_TZ = True 
 
 # --- ARQUIVOS ESTÁTICOS (CSS, JS, IMAGENS) ---
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
     
 if not DEBUG:
@@ -95,6 +95,6 @@ if not DEBUG:
 
 # Diz ao Django para procurar arquivos na pasta 'static' na raiz do projeto
 STATICFILES_DIRS = [
-    BASE_DIR / "static",
+    BASE_DIR / "/static",
 ]
 
