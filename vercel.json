@@ -1,15 +1,20 @@
 {
-    "version": 2,
-    "builds": [
-        {
-            "src": "setup/wsgi.py",
-            "use": "@vercel/python"
-        }
-    ],
-    "routes": [
-        {
-            "src": "/(.*)",
-            "dest": "setup/wsgi.py"
-        }
-    ]
+  "version": 2,
+  "buildCommand": "bash build_files.sh",
+  "builds": [
+    {
+      "src": "setup/wsgi.py",
+      "use": "@vercel/python"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/static/(.*)",
+      "dest": "/staticfiles/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "setup/wsgi.py"
+    }
+  ]
 }
