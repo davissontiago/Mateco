@@ -6,13 +6,20 @@ from .models import NotaFiscal
 from estoque.models import Produto
 from .utils import simular_carrinho_inteligente
 from .services import NuvemFiscalService 
+from django.contrib.auth.decorators import login_required
 
+@login_required
 def home(request): return render(request, 'index.html')
+
+@login_required
 def emitir(request): return render(request, 'emitir.html')
+
+@login_required
 def listar_notas(request):
     notas = NotaFiscal.objects.all().order_by('-data_emissao')
     return render(request, 'notas.html', {'notas': notas})
-    
+
+@login_required 
 def buscar_produtos(request):
     if request.GET.get('simular') == 'true':
         try: valor = float(request.GET.get('valor', 0))
@@ -28,6 +35,7 @@ def buscar_produtos(request):
         return JsonResponse([{'id': p.id, 'nome': p.nome, 'preco_unitario': float(p.preco), 'ncm': p.ncm} for p in prods], safe=False)
     return JsonResponse([], safe=False)
 
+@login_required
 def imprimir_nota(request, nota_id):
     nota = get_object_or_404(NotaFiscal, id=nota_id)
     
@@ -43,7 +51,7 @@ def imprimir_nota(request, nota_id):
     
     return JsonResponse({'error': f'Falha ao baixar PDF: {erro_msg}'}, status=400)
 
-
+@login_required
 @csrf_exempt
 def emitir_nota(request):
     if request.method == 'POST':

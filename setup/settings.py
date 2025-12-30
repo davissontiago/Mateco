@@ -95,8 +95,6 @@ STORAGES = {
     },
 }
 
-print(">>> SETTINGS CARREGADO:", __file__)
-print(">>> STATIC_ROOT:", STATIC_ROOT)
-print(">>> STATICFILES_DIRS:", STATICFILES_DIRS)
-
-
+LOGIN_REDIRECT_URL = 'home' 
+LOGOUT_REDIRECT_URL = 'login'
+LOGIN_URL = 'login'

@@ -16,9 +16,18 @@
         <div class="brand">Mateco Sistemas</div>
         <div class="nav-links">
             <a href="{% url 'home' %}">Início</a>
-            <a href="{% url 'emitir' %}">Emitir</a>
-            <a href="{% url 'listar_notas' %}">Histórico</a>
-            <a href="/admin">Admin</a>
+            
+            {% if user.is_authenticated %}
+                <a href="{% url 'emitir' %}">Emitir</a>
+                <a href="{% url 'listar_notas' %}">Histórico</a>
+                
+                <form action="{% url 'logout' %}" method="post" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit" style="background:none; border:none; color:white; cursor:pointer; font-size:16px;">Sair</button>
+                </form>
+            {% else %}
+                <a href="{% url 'login' %}">Entrar</a>
+            {% endif %}
         </div>
     </nav>
 
