@@ -1,84 +1,106 @@
 {% extends 'base.html' %}
-{% load static %} {% block title %}
-  Frente de Caixa
+{% load static %} 
+
+{% block title %}
+    Frente de Caixa - Mateco
 {% endblock %}
 
 {% block head %}
-  <link rel="stylesheet" href="{% static 'css/emitir.css' %}" />
+    <link rel="stylesheet" href="{% static 'css/emitir.css' %}" />
 {% endblock %}
 
 {% block content %}
-  <div class="container-pdv">
-    <h1>Frente de Caixa</h1>
+<div class="container-pdv">
+    <h1 style="color: #10295a;">Frente de Caixa</h1>
 
     <div class="abas-container">
-      <button class="btn-aba ativo" onclick="mudarModo('manual')" id="btn-manual">🖐️ Busca Manual</button>
-      <button class="btn-aba" onclick="mudarModo('valor')" id="btn-valor">🤖 Carrinho Inteligente</button>
+        <button class="btn-aba ativo" onclick="mudarModo('manual')" id="btn-manual">
+            Busca Manual ✍️
+        </button>
+        <button class="btn-aba" onclick="mudarModo('valor')" id="btn-valor">
+          Carrinho Inteligente 💡
+        </button>
     </div>
 
     <div id="painel-manual" class="area-busca">
-      <input type="text" id="buscaInput" class="input-busca" placeholder="🔍 Buscar produto..." onkeyup="buscarProdutos()" autocomplete="off" />
-      <div id="listaSugestoes" class="sugestoes-lista"></div>
+        <input type="text" id="buscaInput" class="input-busca" 
+               placeholder="🔍 Buscar produto..." autocomplete="off" />
+        <div id="listaSugestoes" class="sugestoes-lista"></div>
     </div>
 
     <div id="painel-valor" class="area-busca hidden">
-      <div class="input-valor-group">
-        <input type="number" id="valor-alvo" class="input-busca" placeholder="Ex: 50.00" step="0.01" />
-        <button onclick="gerarCarrinhoInteligente()" class="btn-completar btn-adicionar" style="background-color: #e67e22; height: 50px; margin-left: 10px;">⚡Gerar</button>
-      </div>
-      <p style="text-align: center; font-size: 0.85em; color: #666; margin-top: 5px;">O sistema escolherá produtos até atingir este valor.</p>
+        <div class="input-valor-group">
+            <input type="number" id="valor-alvo" class="input-busca" 
+                   placeholder="Ex: 50.00" step="0.01" />
+            <button onclick="gerarCarrinhoInteligente()" class="btn-completar btn-adicionar" 
+                    style="background-color: #dd5114; height: 50px; margin-left: 10px;">
+                ⚡Gerar
+            </button>
+        </div>
+        <p style="text-align: center; font-size: 0.85em; color: #666; margin-top: 5px;">
+            O sistema escolherá produtos até atingir este valor.
+        </p>
     </div>
 
     <div class="carrinho" id="carrinhoVisual">
-      <div style="text-align: center; color: #bbb; padding: 30px 0;">🛒 Seu carrinho está vazio</div>
+        <div style="text-align: center; color: #bbb; padding: 30px 0;">Seu carrinho está vazio 🛒</div>
     </div>
 
     <div class="secao-inferior">
-      <div class="total-display" id="totalDisplay">R$ 0,00</div>
+        <div class="total-display" id="totalDisplay" style="color: #dd5114;">R$ 0,00</div>
 
-      <div class="area-pagamento" style="margin-bottom: 15px;">
-        <label for="forma_pagamento" style="font-weight: bold; display: block; margin-bottom: 5px;">Forma de Pagamento:</label>
-        <select id="forma_pagamento" class="input-busca" style="width: 100%; height: 45px;">
-          <option value="01">01 - Dinheiro</option>
-          <option value="03">03 - Cartão de Crédito</option>
-          <option value="04">04 - Cartão de Débito</option>
-          <option value="17">17 - PIX</option>
-        </select>
-      </div>
+        <div class="area-pagamento" style="margin-bottom: 15px;">
+            <label for="forma_pagamento" style="font-weight: bold; display: block; margin-bottom: 5px; color: #10295a;">
+                Forma de Pagamento:
+            </label>
+            <select id="forma_pagamento" class="input-busca" style="width: 100%; height: 45px;">
+                <option value="01">01 - Dinheiro</option>
+                <option value="03">03 - Cartão de Crédito</option>
+                <option value="04">04 - Cartão de Débito</option>
+                <option value="17">17 - PIX</option>
+            </select>
+        </div>
 
-      <button class="btn-emitir" id="btnEmitir" onclick="emitirNota()" disabled>EMITIR NOTA</button>
-      <button class="btn-limpar" onclick="limparCarrinho()">Limpar Carrinho</button>
+        <button class="btn-emitir" id="btnEmitir" onclick="emitirNota()" 
+                style="background-color: #dd5114;" disabled>
+            EMITIR NOTA
+        </button>
+        
+        <button class="btn-limpar" onclick="limparCarrinho()">Limpar Carrinho ❌</button>
 
-      <div id="status"></div>
+        <div id="status"></div>
     </div>
 
     <dialog id="modalQuantidade">
-      <div class="modal-titulo">Quantas unidades?</div>
-      <div id="nomeProdModal" class="modal-prod-nome">...</div>
+        <div class="modal-titulo" style="color: #10295a;">Quantas unidades?</div>
+        <div id="nomeProdModal" class="modal-prod-nome" style="color: #dd5114;">...</div>
 
-      <input type="number" id="qtdInputModal" class="input-qtd" value="1" min="1" inputmode="numeric" />
+        <input type="number" id="qtdInputModal" class="input-qtd" value="1" min="1" 
+               inputmode="numeric" style="border-color: #10295a;" />
 
-      <div class="modal-btn-area">
-        <button class="btn-cancelar" onclick="fecharModalQtd()">Cancelar</button>
-        <button class="btn-confirmar" onclick="confirmarAdicaoManual()">ADICIONAR</button>
-      </div>
+        <div class="modal-btn-area">
+            <button class="btn-cancelar" onclick="fecharModalQtd()">Cancelar</button>
+            <button class="btn-confirmar" onclick="confirmarAdicaoManual()" 
+                    style="background-color: #10295a;">ADICIONAR</button>
+        </div>
     </dialog>
 
     <dialog id="modalConfirmacao">
-      <div class="modal-titulo">Confirmar Emissão?</div>
-      <div style="font-size: 1.5rem; font-weight: bold; color: #27ae60; margin: 20px 0;" id="valorConfirmacaoModal">R$ 0,00</div>
-      <div id="pagamentoConfirmacaoModal" style="color: #666; margin-bottom: 20px; font-weight: bold;"></div>
+        <div class="modal-titulo">Confirmar Emissão?</div>
+        <div style="font-size: 1.5rem; font-weight: bold; color: #dd5114; margin: 20px 0;" 
+             id="valorConfirmacaoModal">R$ 0,00</div>
+        <div id="pagamentoConfirmacaoModal" style="color: #10295a; margin-bottom: 20px; font-weight: bold;"></div>
 
-      <div class="modal-btn-area">
-        <button class="btn-cancelar" onclick="document.getElementById('modalConfirmacao').close()">VOLTAR</button>
-        <button class="btn-confirmar" id="btnConfirmarFinal" style="background: #27ae60;">CONFIRMAR</button>
-      </div>
+        <div class="modal-btn-area">
+            <button class="btn-cancelar" onclick="document.getElementById('modalConfirmacao').close()">VOLTAR</button>
+            <button class="btn-confirmar" id="btnConfirmarFinal" style="background: #27ae60;">CONFIRMAR</button>
+        </div>
     </dialog>
 
     {% csrf_token %}
-  </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
-  <script src="{% static 'js/emitir.js' %}"></script>
+    <script src="{% static 'js/emitir.js' %}"></script>
 {% endblock %}

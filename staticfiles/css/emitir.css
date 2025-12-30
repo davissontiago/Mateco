@@ -1,3 +1,12 @@
+/* =============================================================
+   MATECO SISTEMAS - CSS DO PDV (PONTO DE VENDA)
+   Cores da Marca: 
+   - Laranja: #dd5114
+   - Azul: #10295a
+   - Branco: #ffffff
+   ============================================================= */
+
+/* --- 1. ESTRUTURA PRINCIPAL --- */
 .container-pdv {
     width: 100%;
     max-width: 600px;
@@ -13,11 +22,12 @@
 
 h1 {
     text-align: center;
-    color: #2c3e50;
+    color: #10295a; /* Azul da Marca */
     margin: 0 0 15px 0;
     font-size: 1.4rem;
 }
 
+/* --- 2. ÁREA DE BUSCA --- */
 .area-busca {
     position: relative;
     margin-bottom: 15px;
@@ -36,7 +46,7 @@ h1 {
 }
 
 .input-busca:focus {
-    border-color: #3498db;
+    border-color: #dd5114; /* Laranja da Marca (Foco) */
     outline: none;
 }
 
@@ -68,6 +78,7 @@ h1 {
     background: #f0f8ff;
 }
 
+/* --- 3. CARRINHO DE PRODUTOS --- */
 .carrinho {
     background: #f8f9fa;
     border: 1px dashed #ccc;
@@ -99,14 +110,14 @@ h1 {
 
 .item-valor {
     font-weight: bold;
-    color: #2c3e50;
+    color: #10295a; /* Azul da Marca */
     white-space: nowrap;
     font-size: 0.95em;
 }
 
 .btn-remover {
     background: #ffebee;
-    color: #c0392b;
+    color: #c0392b; /* Mantido vermelho para indicar exclusão */
     border: none;
     width: 30px;
     height: 30px;
@@ -120,6 +131,7 @@ h1 {
     flex-shrink: 0;
 }
 
+/* --- 4. RODAPÉ E TOTAIS --- */
 .secao-inferior {
     flex-shrink: 0;
 }
@@ -128,7 +140,7 @@ h1 {
     text-align: right;
     font-size: 1.8em;
     font-weight: 800;
-    color: #27ae60;
+    color: #dd5114; /* Laranja da Marca (Destaque) */
     margin-bottom: 15px;
     border-top: 2px solid #f0f0f0;
     padding-top: 10px;
@@ -155,9 +167,10 @@ h1 {
     appearance: none;
 }
 
+/* --- 5. BOTÕES DE AÇÃO --- */
 .btn-completar {
     flex: 2;
-    background: #f39c12;
+    background: #dd5114; /* Laranja da Marca (Botão Inteligente) */
     color: white;
     border: none;
     padding: 12px;
@@ -168,7 +181,7 @@ h1 {
 }
 
 .btn-refazer {
-    background: #3498db;
+    background: #10295a; /* Azul da Marca */
     color: white;
     border: none;
     padding: 12px;
@@ -184,7 +197,7 @@ h1 {
 
 .btn-emitir {
     width: 100%;
-    background: #27ae60;
+    background: #10295a; /* Laranja da Marca (Principal) */
     color: white;
     padding: 15px;
     font-size: 1.2em;
@@ -192,12 +205,12 @@ h1 {
     border: none;
     border-radius: 8px;
     cursor: pointer;
-    box-shadow: 0 4px 0 #219150;
+    box-shadow: 0 4px 0 #10295a; /* Sombra Laranja Escuro (Efeito 3D) */
 }
 
 .btn-emitir:active {
     transform: translateY(2px);
-    box-shadow: 0 2px 0 #219150;
+    box-shadow: 0 2px 0 #10295a; /* Sombra ajustada */
 }
 
 .btn-emitir:disabled {
@@ -218,6 +231,7 @@ h1 {
     padding: 5px;
 }
 
+/* --- 6. MODAIS (DIALOG) --- */
 dialog {
     border: none;
     border-radius: 12px;
@@ -240,7 +254,7 @@ dialog::backdrop {
 
 .modal-prod-nome {
     font-weight: bold;
-    color: #2980b9;
+    color: #10295a; /* Azul da Marca */
     margin-bottom: 20px;
     font-size: 1.1em;
 }
@@ -250,7 +264,7 @@ dialog::backdrop {
     padding: 10px;
     font-size: 1.5em;
     text-align: center;
-    border: 2px solid #3498db;
+    border: 2px solid #dd5114; /* Laranja da Marca */
     border-radius: 8px;
     margin-bottom: 20px;
 }
@@ -271,7 +285,7 @@ dialog::backdrop {
 }
 
 .btn-confirmar {
-    background: #27ae60;
+    background: #dd5114; /* Laranja da Marca */
     color: white;
     border: none;
     padding: 10px 20px;
@@ -279,6 +293,7 @@ dialog::backdrop {
     font-weight: bold;
 }
 
+/* --- 7. RESPONSIVIDADE (MOBILE) --- */
 @media (max-width: 480px) {
     .container-pdv {
         padding: 10px;
@@ -309,9 +324,10 @@ dialog::backdrop {
     }
 }
 
+/* --- 8. MENSAGENS E UTILITÁRIOS --- */
 .sucesso-msg {
     position: relative;
-    background: #d4edda;
+    background: #d4edda; /* Verde claro padrão para sucesso (não alterado para legibilidade) */
     padding: 20px;
     border-radius: 8px;
     color: #155724;
@@ -328,7 +344,7 @@ dialog::backdrop {
 
 .btn-pdf {
     display: block;
-    background: #2c3e50;
+    background: #10295a; /* Azul da Marca */
     color: white;
     padding: 10px;
     margin-top: 8px;
@@ -337,6 +353,7 @@ dialog::backdrop {
     font-weight: bold;
 }
 
+/* --- 9. ABAS DE NAVEGAÇÃO --- */
 .abas-container {
     display: flex;
     justify-content: center;
@@ -346,9 +363,9 @@ dialog::backdrop {
 
 .btn-aba {
     padding: 10px 20px;
-    border: 2px solid #3498db;
+    border: 2px solid #10295a; /* Azul da Marca */
     background: transparent;
-    color: #3498db;
+    color: #10295a; /* Azul da Marca */
     cursor: pointer;
     font-weight: bold;
     border-radius: 5px;
@@ -356,7 +373,7 @@ dialog::backdrop {
 }
 
 .btn-aba.ativo {
-    background: #3498db;
+    background: #10295a; /* Azul da Marca */
     color: white;
 }
 

@@ -1,23 +1,87 @@
 {% extends 'base.html' %}
 
-{% block title %}Histórico de Notas{% endblock %}
+{% block title %}Histórico de Notas - Mateco{% endblock %}
 
 {% block head %}
 <style>
-    .container-notas { max-width: 800px; margin: 0 auto; }
-    h1 { color: #333; text-align: center; margin-bottom: 30px; }
+    /* Container centralizado para a listagem */
+    .container-notas { 
+        max-width: 800px; 
+        margin: 0 auto; 
+        padding-bottom: 50px;
+    }
 
-    table { width: 100%; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-    th, td { padding: 15px; text-align: left; border-bottom: 1px solid #eee; }
-    th { background-color: #2c3e50; color: white; font-weight: bold; }
-    tr:hover { background-color: #f8f9fa; }
+    h1 { 
+        color: #10295a; /* Azul da Marca */
+        text-align: center; 
+        margin-bottom: 30px; 
+    }
 
-    .status { padding: 5px 12px; border-radius: 20px; font-size: 0.85em; font-weight: bold; text-transform: uppercase; background-color: #d4edda; color: #155724; }
-    
-    .btn-ver { background-color: #3498db; color: white; padding: 8px 15px; text-decoration: none; border-radius: 5px; font-size: 0.9em; font-weight: bold; }
-    .btn-ver:hover { background-color: #2980b9; }
+    /* Estilização da Tabela de Notas */
+    table { 
+        width: 100%; 
+        border-collapse: collapse; 
+        background: white; 
+        border-radius: 10px; 
+        overflow: hidden; 
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
+    }
 
-    .empty-state { text-align: center; padding: 40px; color: #7f8c8d; }
+    th, td { 
+        padding: 15px; 
+        text-align: left; 
+        border-bottom: 1px solid #eee; 
+    }
+
+    /* Cabeçalho com a cor Azul da Marca */
+    th { 
+        background-color: #10295a; 
+        color: white; 
+        font-weight: bold; 
+        text-transform: uppercase;
+        font-size: 0.85em;
+    }
+
+    tr:hover { 
+        background-color: #f8f9fa; 
+    }
+
+    /* Tags de Status */
+    .status { 
+        padding: 5px 12px; 
+        border-radius: 20px; 
+        font-size: 0.85em; 
+        font-weight: bold; 
+        text-transform: uppercase; 
+        background-color: #d4edda; 
+        color: #155724; 
+    }
+
+    /* Botão de Visualização (Laranja da Marca) */
+    .btn-ver { 
+        background-color: #dd5114; 
+        color: white; 
+        padding: 8px 15px; 
+        text-decoration: none; 
+        border-radius: 5px; 
+        font-size: 0.9em; 
+        font-weight: bold; 
+        transition: background 0.3s;
+    }
+
+    .btn-ver:hover { 
+        background-color: #b03e0e; 
+    }
+
+    /* Estado vazio: quando não há notas no banco */
+    .empty-state { 
+        text-align: center; 
+        padding: 40px; 
+        color: #7f8c8d; 
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    }
 </style>
 {% endblock %}
 
@@ -40,9 +104,15 @@
                 {% for nota in notas %}
                 <tr>
                     <td><strong>{{ nota.numero }}</strong></td>
+                    
                     <td>{{ nota.data_emissao|date:"d/m/Y H:i" }}</td>
-                    <td style="color: #27ae60; font-weight: bold;">R$ {{ nota.valor_total }}</td>
+                    
+                    <td style="color: #10295a; font-weight: bold;">
+                        R$ {{ nota.valor_total }}
+                    </td>
+                    
                     <td><span class="status">{{ nota.status }}</span></td>
+                    
                     <td>
                         <a href="{% url 'imprimir_nota' nota.id %}" target="_blank" class="btn-ver">
                             📄 Ver PDF
@@ -55,6 +125,7 @@
     {% else %}
         <div class="empty-state">
             <h3>Nenhuma nota emitida ainda.</h3>
+            <p>Comece a operar agora mesmo!</p>
             <br>
             <a href="{% url 'emitir' %}" class="btn-ver">Emitir Nova Nota</a>
         </div>

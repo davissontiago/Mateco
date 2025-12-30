@@ -14,7 +14,6 @@ from .services import NuvemFiscalService
 # 1. VIEWS DE NAVEGAÇÃO (PÁGINAS HTML)
 # ==================================================
 
-@login_required
 def home(request):
     """Renderiza a página inicial do Dashboard."""
     return render(request, 'index.html')
