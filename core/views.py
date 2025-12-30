@@ -5,32 +5,49 @@ from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
 
 # Importações locais do projeto
-from .models import NotaFiscal
+from .models import NotaFiscal, Empresa
 from estoque.models import Produto
 from .utils import simular_carrinho_inteligente
 from .services import NuvemFiscalService 
 
 # ==================================================
+# FUNÇÃO AUXILIAR DE SEGURANÇA
+# ==================================================
+def get_empresa_usuario(request):
+    """
+    Recupera a empresa vinculada ao usuário logado.
+    Se o usuário não tiver empresa (ex: admin esqueceu de vincular), retorna None.
+    """
+    try:
+        # O 'perfil' vem do related_name que definimos no models.py
+        return request.user.perfil.empresa
+    except AttributeError:
+        return None
+
+# ==================================================
 # 1. VIEWS DE NAVEGAÇÃO (PÁGINAS HTML)
 # ==================================================
 
+@login_required
 def home(request):
-    """Renderiza a página inicial do Dashboard."""
-    return render(request, 'index.html')
+    empresa = get_empresa_usuario(request)
+    return render(request, 'index.html', {'empresa': empresa})
 
 @login_required
 def emitir(request):
-    """Renderiza a tela de PDV para emissão de novas notas."""
-    return render(request, 'emitir.html')
+    empresa = get_empresa_usuario(request)
+    return render(request, 'emitir.html', {'empresa': empresa})
 
 @login_required
 def listar_notas(request):
-    """
-    Exibe o histórico de todas as notas fiscais emitidas.
-    Ordenado pelas mais recentes.
-    """
-    notas = NotaFiscal.objects.all().order_by('-data_emissao')
-    return render(request, 'notas.html', {'notas': notas})
+    empresa = get_empresa_usuario(request)
+    if not empresa:
+        return render(request, 'notas.html', {'error': 'Usuário sem empresa vinculada.'})
+
+    # FILTRAGEM: Traz apenas as notas da empresa do usuário
+    notas = NotaFiscal.objects.filter(empresa=empresa).order_by('-data_emissao')
+    
+    return render(request, 'notas.html', {'notas': notas, 'empresa': empresa})
 
 # ==================================================
 # 2. VIEWS DE API (SERVIÇOS PARA O FRONTEND)
@@ -38,32 +55,32 @@ def listar_notas(request):
 
 @login_required 
 def buscar_produtos(request):
-    """
-    Endpoint para busca de produtos ou simulação de carrinho.
-    
-    Parâmetros GET:
-    - q: Termo de busca por nome.
-    - simular: 'true' para ativar o algoritmo de preenchimento automático.
-    - valor: Valor alvo para a simulação.
-    """
-    # Lógica de Simulação Inteligente
+    empresa = get_empresa_usuario(request)
+    if not empresa:
+        return JsonResponse({'error': 'Usuário sem empresa configurada'}, status=403)
+
+    # 1. Modo Simulação (Carrinho Inteligente)
     if request.GET.get('simular') == 'true':
         try: 
             valor = float(request.GET.get('valor', 0))
         except (ValueError, TypeError): 
             return JsonResponse({'error': 'Valor inválido'}, status=400)
             
-        produtos = list(Produto.objects.filter(preco__gt=0).order_by('preco'))
+        # FILTRAGEM: Busca apenas produtos da minha empresa que tenham preço
+        produtos = list(Produto.objects.filter(empresa=empresa, preco__gt=0).order_by('preco'))
+        
         if not produtos: 
-            return JsonResponse({'error': 'Sem produtos cadastrados'}, status=404)
+            return JsonResponse({'error': 'Sem produtos cadastrados nesta loja'}, status=404)
             
         lista, total = simular_carrinho_inteligente(valor, produtos)
         return JsonResponse({'itens': lista, 'total': round(total, 2)})
 
-    # Busca Simples por Termo
+    # 2. Modo Busca Manual (Autocomplete)
     termo = request.GET.get('q', '')
     if termo:
-        prods = Produto.objects.filter(nome__icontains=termo)[:10]
+        # FILTRAGEM: Busca produtos da empresa com nome parecido
+        prods = Produto.objects.filter(empresa=empresa, nome__icontains=termo)[:10]
+        
         return JsonResponse([
             {
                 'id': p.id, 
@@ -81,15 +98,16 @@ def buscar_produtos(request):
 
 @login_required
 def imprimir_nota(request, nota_id):
-    """
-    Faz o download ou exibição do PDF da nota diretamente da Nuvem Fiscal.
-    """
-    nota = get_object_or_404(NotaFiscal, id=nota_id)
+    empresa = get_empresa_usuario(request)
+    
+    # SEGURANÇA: Garante que só posso baixar notas da MINHA empresa
+    nota = get_object_or_404(NotaFiscal, id=nota_id, empresa=empresa)
     
     if not nota.id_nota:
         return JsonResponse({'error': 'Nota sem ID da Nuvem Fiscal.'}, status=404)
 
-    pdf_content, erro_msg = NuvemFiscalService.baixar_pdf(nota.id_nota)
+    # ATENÇÃO: Aqui ainda estamos usando as credenciais do .env (Passo 5 vai corrigir isso)
+    pdf_content, erro_msg = NuvemFiscalService.baixar_pdf(empresa, nota.id_nota)
     
     if pdf_content:
         response = HttpResponse(pdf_content, content_type='application/pdf')
@@ -101,10 +119,10 @@ def imprimir_nota(request, nota_id):
 @login_required
 @csrf_exempt
 def emitir_nota(request):
-    """
-    Processa a requisição POST do frontend para emitir a NFC-e.
-    Comunica-se com NuvemFiscalService e salva o resultado no banco local.
-    """
+    empresa = get_empresa_usuario(request)
+    if not empresa:
+        return JsonResponse({'mensagem': 'Usuário sem empresa vinculada!'}, status=403)
+
     if request.method == 'POST':
         try:
             dados = json.loads(request.body)
@@ -114,12 +132,16 @@ def emitir_nota(request):
             if not itens: 
                 return JsonResponse({'mensagem': 'Carrinho vazio'}, status=400)
             
-            # Tenta emitir via API externa
-            sucesso, resultado, valor = NuvemFiscalService.emitir_nfce(itens, forma_pagamento)
+            # --- ATENÇÃO ---
+            # No próximo passo, vamos passar o objeto 'empresa' para este serviço
+            # para que ele use o CNPJ e Token corretos.
+            # Por enquanto, ele ainda vai ler do .env (Monolítico)
+            sucesso, resultado, valor = NuvemFiscalService.emitir_nfce(empresa, itens, forma_pagamento)
 
             if sucesso:
-                # Cria o registro local da nota autorizada
+                # Cria o registro local vinculado à empresa correta
                 nota = NotaFiscal.objects.create(
+                    empresa=empresa,  # <--- VÍNCULO IMPORTANTE
                     id_nota=resultado.get('id'),
                     numero=resultado.get('numero', 0),
                     serie=resultado.get('serie', 0),
