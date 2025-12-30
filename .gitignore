@@ -1,8 +1,10 @@
 # Python e Venv
 __pycache__/
 *.py[cod]
+*$py.class
 venv/
 .env
+
 
 # Banco de dados local
 db.sqlite3
