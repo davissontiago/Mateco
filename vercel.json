@@ -1,24 +1,19 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "setup/wsgi.py",
-      "use": "@vercel/python",
-      "config": {
-        "includeFiles": [
-          "staticfiles/**"
-        ]
-      }
-    }
-  ],
-  "routes": [
-    {
-      "src": "/static/(.*)",
-      "dest": "/staticfiles/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "setup/wsgi.py"
-    }
-  ]
+    "version": 2,
+    "builds": [
+        {
+            "src": "setup/wsgi.py",
+            "use": "@vercel/python",
+            "config": {
+                "maxDuration": 10,
+                "includeFiles": "staticfiles/**"
+            }
+        }
+    ],
+    "routes": [
+        {
+            "src": "/(.*)",
+            "dest": "setup/wsgi.py"
+        }
+    ]
 }
