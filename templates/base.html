@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
     
-    <title>{% block title %}Mateco PDV{% endblock %}</title>
+    <title>{% block title %}Mateco Sistemas{% endblock %}</title>
     
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
 
@@ -13,8 +13,15 @@
 </head>
 <body>
 
-    <nav>
-        <div class="brand">Mateco Sistemas</div>
+    <nav style="background-color: {{ empresa_ativa.cor_cabecalho|default:'#10295a' }};">
+        
+        <div class="brand">
+            {% if empresa_ativa %}
+                {{ empresa_ativa.nome }}
+            {% else %}
+                Mateco Sistemas
+            {% endif %}
+        </div>
         
         <div class="nav-links">
             <a href="{% url 'home' %}">Início</a>

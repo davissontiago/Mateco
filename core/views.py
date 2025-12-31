@@ -28,7 +28,6 @@ def get_empresa_usuario(request):
 # 1. VIEWS DE NAVEGAÇÃO (PÁGINAS HTML)
 # ==================================================
 
-@login_required
 def home(request):
     empresa = get_empresa_usuario(request)
     return render(request, 'index.html', {'empresa': empresa})
