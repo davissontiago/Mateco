@@ -12,10 +12,18 @@ class NuvemFiscalService:
     Agora 100% compatível com o sistema Multi-Empresa (Multi-Tenant).
     Recebe o objeto 'empresa' como parâmetro para usar as credenciais corretas.
     """
-
-    # URL Base da API (Pode mudar para 'api.nuvemfiscal.com.br' em produção)
-    BASE_URL = "https://api.sandbox.nuvemfiscal.com.br"
+    
     AUTH_URL = "https://auth.nuvemfiscal.com.br/oauth/token"
+    
+    @classmethod
+    def get_base_url(cls, empresa):
+        """
+        Retorna a URL correta da API dependendo do ambiente da empresa.
+        """
+        if empresa.ambiente == 'producao':
+            return "https://api.nuvemfiscal.com.br/nfe/v2"
+        else:
+            return "https://api.sandbox.nuvemfiscal.com.br/nfe/v2"
 
     @classmethod
     def pegar_token(cls, empresa):
@@ -25,34 +33,39 @@ class NuvemFiscalService:
         Utiliza as credenciais CLIENT_ID e CLIENT_SECRET vindas do objeto EMPRESA
         do banco de dados, e não mais do arquivo .env.
         """
-        # Pega credenciais específicas da Loja/Empresa
-        client_id = empresa.nuvem_client_id
-        client_secret = empresa.nuvem_client_secret
-
-        # Preparação das credenciais em Base64 para autenticação Basic
-        credenciais = f"{client_id}:{client_secret}"
-        credenciais_b64 = base64.b64encode(credenciais.encode()).decode()
-
-        headers = {
-            "Authorization": f"Basic {credenciais_b64}",
-            "Content-Type": "application/x-www-form-urlencoded",
+        
+        # 1. Seleciona as chaves baseadas no "Interruptor" do banco
+        if empresa.ambiente == 'producao':
+            client_id = empresa.nuvem_client_id_producao
+            client_secret = empresa.nuvem_client_secret_producao
+            scope = "cnpj" 
+        else:
+            client_id = empresa.nuvem_client_id_homologacao
+            client_secret = empresa.nuvem_client_secret_homologacao
+            scope = "cnpj"
+            
+        # 2. Validação básica
+        if not client_id or not client_secret:
+            print(f"ERRO: Credenciais não preenchidas para o ambiente: {empresa.get_ambiente_display()}")
+            return None
+        
+        # 3. Requisição do Token
+        payload = {
+            "grant_type": "client_credentials",
+            "client_id": client_id,
+            "client_secret": client_secret,
+            "scope": scope
         }
-
+        
         try:
-            resp = requests.post(
-                cls.AUTH_URL,
-                headers=headers,
-                data={"grant_type": "client_credentials", "scope": "nfce"},
-                timeout=30,
-            )
-            if resp.status_code == 200:
-                return resp.json()["access_token"]
+            response = requests.post(cls.AUTH_URL, data=payload, timeout=10)
+            if response.status_code == 200:
+                return response.json().get("access_token")
             else:
-                # Log de erro útil para debug
-                print(f"Erro Auth NuvemFiscal: {resp.text}")
+                print(f"Erro Auth Nuvem Fiscal: {response.status_code} - {response.text}")
                 return None
         except Exception as e:
-            print(f"Falha na conexão Auth: {str(e)}")
+            print(f"Erro de conexão na Auth: {e}")
             return None
 
     @classmethod
@@ -61,14 +74,27 @@ class NuvemFiscalService:
         Monta o XML/JSON da NFC-e e envia para autorização.
         """
         try:
+            # --- CONFIGURAÇÃO DO AMBIENTE (INTERRUPTOR) ---
+            is_producao = (empresa.ambiente == 'producao')
+            
+            # Definições dinâmicas
+            env_str = "producao" if is_producao else "homologacao"
+            tp_amb_code = 1 if is_producao else 2  
+            serie_nota = 2 if is_producao else 1 # Quero 2 para produção e 1 para testes
+            
+            # Seleciona a URL correta
+            base_url = cls.get_base_url(empresa)
+            
+            print(f"--- INICIANDO EMISSÃO EM: {env_str.upper()} ---")
+            
             # 1. Autenticação
             token = cls.pegar_token(empresa)
             if not token:
                 return False, "Falha na autenticação", 0.0
 
-            cod_municipio = "2112209" # Timon-MA
-
             # 2. Dados do Emitente
+            cod_municipio = empresa.cod_municipio
+            
             emitente_data = {
                 "CNPJ": empresa.cnpj,
                 "xNome": empresa.nome,
@@ -94,7 +120,7 @@ class NuvemFiscalService:
                 
                 dest_data = {
                     "xNome": cliente.nome,
-                    "indIEDest": 9, # Importante: Inteiro (sem aspas)
+                    "indIEDest": 9, 
                 }
 
                 if len(doc_limpo) == 11:
@@ -155,20 +181,22 @@ class NuvemFiscalService:
             if forma_pagamento in ["03", "04", "17"]:
                 det_pag["card"] = {"tpIntegra": 2}
 
-            # 6. Payload Final
+            # 6. Numeração e Identificação
             data_emissao = datetime.now().astimezone().isoformat()
+            
+            # Busca a última nota da SÉRIE correta
             ultima_nota = NotaFiscal.objects.filter(empresa=empresa).order_by("-numero").first()
             numero_nota = (ultima_nota.numero + 1) if ultima_nota else 1
 
             payload = {
-                "ambiente": "homologacao",
+                "ambiente": env_str,
                 "infNFe": {
                     "versao": "4.00",
                     "ide": {
                         "cUF": 21,
                         "natOp": "VENDA",
                         "mod": 65,
-                        "serie": 2,
+                        "serie": serie_nota,
                         "nNF": numero_nota,
                         "dhEmi": data_emissao,
                         "tpNF": 1,
@@ -176,7 +204,7 @@ class NuvemFiscalService:
                         "cMunFG": cod_municipio,
                         "tpImp": 4,
                         "tpEmis": 1,
-                        "tpAmb": 2,
+                        "tpAmb": tp_amb_code,
                         "finNFe": 1,
                         "indFinal": 1,
                         "indPres": 1,
@@ -206,7 +234,7 @@ class NuvemFiscalService:
                 payload["infNFe"]["dest"] = dest_data
 
             # 7. Envio
-            url = f"{cls.BASE_URL}/nfce"
+            url = f"{base_url}/nfce"
             headers = {
                 "Authorization": f"Bearer {token}",
                 "Content-Type": "application/json",
@@ -241,7 +269,8 @@ class NuvemFiscalService:
             if not token:
                 return None, "Falha na autenticação (Token)"
 
-            url = f"{cls.BASE_URL}/nfce/{id_nota_nuvem}/pdf"
+            base_url = cls.get_base_url(empresa)
+            url = f"{base_url}/nfce/{id_nota_nuvem}/pdf"
             headers = {"Authorization": f"Bearer {token}"}
 
             response = requests.get(url, headers=headers, timeout=30)

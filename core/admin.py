@@ -8,18 +8,27 @@ from .models import NotaFiscal, Empresa, PerfilUsuario, Cliente
 # ==================================================
 @admin.register(Empresa)
 class EmpresaAdmin(admin.ModelAdmin):
-    list_display = ('nome', 'cnpj', 'cidade', 'uf', 'crt')
-    search_fields = ('nome', 'cnpj')
+    list_display = ('nome', 'cnpj', 'cidade', 'ambiente') # Adicionei 'ambiente' na lista
+    
+    # Organizando o formulário em seções para não ficar confuso
     fieldsets = (
         ('Identificação', {
-            'fields': ('nome', 'cnpj', 'inscricao_estadual', 'crt')
+            'fields': ('nome', 'nome_fantasia', 'cnpj', 'inscricao_estadual', 'crt')
+        }),
+        ('Configuração do Sistema', {
+            'fields': ('ambiente', 'cor_primaria', 'cor_secundaria')
         }),
         ('Endereço', {
-            'fields': ('cep', 'logradouro', 'numero', 'bairro', 'cidade', 'uf')
+            'fields': ('cep', 'logradouro', 'numero', 'bairro', 'cidade', 'uf', 'cod_municipio')
         }),
-        ('Integração Nuvem Fiscal', {
-            'fields': ('nuvem_client_id', 'nuvem_client_secret'),
-            'description': 'Credenciais geradas no painel da Nuvem Fiscal.'
+        ('Credenciais - PRODUÇÃO (Venda Real)', {
+            'description': 'Preencha apenas quando for emitir notas valendo dinheiro.',
+            'classes': ('collapse',),
+            'fields': ('nuvem_client_id_producao', 'nuvem_client_secret_producao')
+        }),
+        ('Credenciais - HOMOLOGAÇÃO (Testes)', {
+            'description': 'Chaves para testes sem valor fiscal.',
+            'fields': ('nuvem_client_id_homologacao', 'nuvem_client_secret_homologacao')
         }),
     )
     
@@ -77,6 +86,6 @@ admin.site.register(User, CustomUserAdmin)
 # ==================================================
 @admin.register(NotaFiscal)
 class NotaFiscalAdmin(admin.ModelAdmin):
-    list_display = ('numero', 'data_emissao', 'valor_total', 'status')
-    list_filter = ('status', 'data_emissao')
-    search_fields = ('numero', 'chave')
+    list_display = ('numero', 'serie', 'ambiente', 'data_emissao', 'valor_total', 'status')
+    list_filter = ('ambiente', 'serie','status', 'data_emissao')
+    search_fields = ('numero','cliente__nome', 'chave')

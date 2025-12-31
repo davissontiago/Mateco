@@ -155,7 +155,7 @@ def emitir_nota(request):
             sucesso, resultado, valor = NuvemFiscalService.emitir_nfce(empresa, itens, forma_pagamento, cliente=cliente)
 
             if sucesso:
-                # Cria o registro local vinculado à empresa correta
+                ambiente_usado = 'producao' if empresa.ambiente == 'producao' else 'homologacao'
                 nota = NotaFiscal.objects.create(
                     empresa=empresa, 
                     cliente=cliente,
@@ -164,7 +164,8 @@ def emitir_nota(request):
                     serie=resultado.get('serie', 0),
                     chave=resultado.get('chave', ''),
                     valor_total=valor,
-                    status='AUTORIZADA'
+                    status='AUTORIZADA',
+                    ambiente=ambiente_usado
                 )
                 return JsonResponse({'status': 'sucesso', 'id_nota': nota.id})
             else:
