@@ -6,8 +6,15 @@
 
 {% block content %}
   <div style="text-align: center;">
-    <h1>Bem-vindo a Mateco Sistemas</h1>
-    <h3>Sistema de Gerenciamento de Empresas.</h3>
-    <p>Faça login e acesse as funcionalides no menu superior!</p> <br>
+
+    {% if empresa_ativa %}
+              <h1>Bem-vindo {{empresa_ativa.nome}}</h1>
+              <p>Acesse as funcionalides no menu superior!</p>
+            {% else %}
+              <h1>Bem-vindo a Mateco Sistemas</h1>
+              <h3>Sistema de Gerenciamento de Empresas.</h3>
+              <p>Faça login e acesse as funcionalides no menu superior!</p>
+            {% endif %}
+    
   </div>
 {% endblock %}
