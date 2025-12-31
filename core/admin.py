@@ -1,42 +1,51 @@
 from django.contrib import admin
-from .models import NotaFiscal
+from django.contrib.auth.admin import UserAdmin
+from django.contrib.auth.models import User
+from .models import NotaFiscal, Empresa, PerfilUsuario
 
-@admin.register(NotaFiscal)
-class NotaFiscalAdmin(admin.ModelAdmin):
-    """
-    Configuração do painel administrativo para Notas Fiscais.
-    
-    Permite visualizar o histórico de notas, filtrar por status/data
-    e buscar por números identificadores.
-    """
-
-    # ==================================================
-    # 1. VISUALIZAÇÃO NA LISTA (COLUNAS)
-    # ==================================================
-    # Define quais colunas aparecem na tabela principal
-    list_display = (
-        'numero',
-        'serie',
-        'data_emissao',
-        'valor_total',
-        'status',
-        'id_nota',
+# ==================================================
+# 1. ADMINISTRAÇÃO DE EMPRESAS
+# ==================================================
+@admin.register(Empresa)
+class EmpresaAdmin(admin.ModelAdmin):
+    list_display = ('nome', 'cnpj', 'cidade', 'uf', 'crt')
+    search_fields = ('nome', 'cnpj')
+    fieldsets = (
+        ('Identificação', {
+            'fields': ('nome', 'cnpj', 'inscricao_estadual', 'crt')
+        }),
+        ('Endereço', {
+            'fields': ('cep', 'logradouro', 'numero', 'bairro', 'cidade', 'uf')
+        }),
+        ('Integração Nuvem Fiscal', {
+            'fields': ('nuvem_client_id', 'nuvem_client_secret'),
+            'description': 'Credenciais geradas no painel da Nuvem Fiscal.'
+        }),
     )
 
-    # ==================================================
-    # 2. FERRAMENTAS DE BUSCA E FILTRO
-    # ==================================================
-    # Campos onde a barra de pesquisa vai procurar
-    search_fields = ('numero', 'chave', 'id_nota')
-    
-    # Filtros laterais (Sidebars)
-    list_filter = ('status', 'data_emissao')
+# ==================================================
+# 2. VÍNCULO USUÁRIO -> EMPRESA (INLINE)
+# ==================================================
+# Isso faz aparecer o campo "Empresa" dentro da tela de Usuários
+class PerfilUsuarioInline(admin.StackedInline):
+    model = PerfilUsuario
+    can_delete = False
+    verbose_name_plural = 'Empresa Associada'
 
-    # ==================================================
-    # 3. COMPORTAMENTO E ORDENAÇÃO
-    # ==================================================
-    # Ordenação padrão (do mais recente para o mais antigo)
-    ordering = ('-data_emissao',)
-    
-    # Limita quantos itens aparecem por página (evita travar se tiver mil notas)
-    list_per_page = 25
+# Estendendo o UserAdmin padrão do Django
+class CustomUserAdmin(UserAdmin):
+    inlines = (PerfilUsuarioInline, )
+
+# Remove o registro antigo de User e adiciona o nosso personalizado
+admin.site.unregister(User)
+admin.site.register(User, CustomUserAdmin)
+
+
+# ==================================================
+# 3. ADMINISTRAÇÃO DE NOTAS
+# ==================================================
+@admin.register(NotaFiscal)
+class NotaFiscalAdmin(admin.ModelAdmin):
+    list_display = ('numero', 'data_emissao', 'valor_total', 'status')
+    list_filter = ('status', 'data_emissao')
+    search_fields = ('numero', 'chave')

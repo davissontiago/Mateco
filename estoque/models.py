@@ -1,4 +1,5 @@
 from django.db import models
+from core.models import Empresa
 
 class Produto(models.Model):
     """
@@ -7,6 +8,9 @@ class Produto(models.Model):
     Este modelo armazena informações comerciais e fiscais necessárias 
     tanto para o controle de estoque quanto para a emissão de NFC-e.
     """
+
+    # Campo Novo: Vincula o produto a uma loja específica
+    empresa = models.ForeignKey(Empresa, on_delete=models.CASCADE, verbose_name="Loja/Empresa")
 
     # ==================================================
     # 1. IDENTIFICAÇÃO DO PRODUTO
@@ -17,7 +21,6 @@ class Produto(models.Model):
     )
     codigo = models.CharField(
         max_length=20, 
-        unique=True, 
         verbose_name="Código (EAN/Ref)"
     )
 
@@ -54,3 +57,4 @@ class Produto(models.Model):
         """Configurações de exibição do modelo no banco e no Admin."""
         verbose_name = "Produto"
         verbose_name_plural = "Produtos"
+        unique_together = ('empresa', 'codigo')

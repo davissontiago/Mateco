@@ -2,59 +2,72 @@ import csv
 import os
 from django.core.management.base import BaseCommand
 from estoque.models import Produto
+from core.models import Empresa
 
 class Command(BaseCommand):
     """
-    Comando customizado para importar dados de produtos via arquivo CSV.
+    Comando para importar produtos vinculando-os a uma Empresa específica.
     
-    O script lê o arquivo 'Produtos.csv' na raiz do projeto e realiza a 
-    sincronização com o banco de dados utilizando a lógica de upsert 
-    (atualiza se existir, cria se for novo).
+    Uso:
+        python manage.py importar_csv <id_empresa> --arquivo <nome_arquivo.csv>
     """
+    help = 'Importa produtos de um CSV para uma Empresa específica.'
 
-    help = 'Importa ou atualiza produtos a partir de um arquivo CSV (Produtos.csv)'
+    def add_arguments(self, parser):
+        # Argumento obrigatório: ID da empresa no banco
+        parser.add_argument('empresa_id', type=int, help='ID da empresa para vincular os produtos')
+        
+        # Argumento opcional: Nome do arquivo (padrão: Produtos.csv)
+        parser.add_argument(
+            '--arquivo',
+            type=str,
+            default='Produtos.csv',
+            help='Nome do arquivo CSV na raiz do projeto (Padrão: Produtos.csv)'
+        )
 
     def handle(self, *args, **kwargs):
-        """Execução principal do comando de importação."""
-        
-        # Define o local do arquivo (esperado na raiz do diretório Mateco)
-        caminho_arquivo = 'Produtos.csv' 
+        empresa_id = kwargs['empresa_id']
+        caminho_arquivo = kwargs['arquivo']
 
-        # Verificação de segurança: interrompe se o arquivo não estiver presente
+        # 1. Verifica se a empresa existe
+        try:
+            empresa = Empresa.objects.get(id=empresa_id)
+            self.stdout.write(self.style.SUCCESS(f'Importando para a empresa: {empresa.nome} (ID: {empresa.id})'))
+        except Empresa.DoesNotExist:
+            self.stdout.write(self.style.ERROR(f'Empresa com ID {empresa_id} não encontrada!'))
+            return
+
+        # 2. Verifica se o arquivo existe
         if not os.path.exists(caminho_arquivo):
             self.stdout.write(self.style.ERROR(f'Arquivo "{caminho_arquivo}" não encontrado!'))
             return
 
-        # Abre o arquivo com encoding 'utf-8-sig' para ignorar o BOM do Excel
+        # 3. Processamento
         with open(caminho_arquivo, mode='r', encoding='utf-8-sig') as arquivo:
-            # O delimitador ';' é o padrão para CSVs gerados no Brasil
             leitor = csv.DictReader(arquivo, delimiter=';')
             
-            produtos_criados = 0
-            produtos_atualizados = 0
+            criados = 0
+            atualizados = 0
 
-            self.stdout.write('Iniciando processamento do CSV...')
+            self.stdout.write('Iniciando processamento...')
 
             for linha in leitor:
                 try:
-                    # --- 1. Limpeza e Tratamento de Dados ---
-                    # Remove aspas e espaços extras do código de barras
+                    # Tratamento de dados
                     codigo = linha['Código de Barras'].strip().replace('"', '')
                     nome = linha['Descrição'].strip()
-                    # Remove pontos do NCM para manter apenas os números
-                    ncm = linha['NCM'].strip().replace('.', '') 
+                    ncm = linha['NCM'].strip().replace('.', '')
                     
-                    # Converte preço: substitui vírgula decimal brasileira por ponto
                     preco_str = linha['Preço Venda Varejo'].replace(',', '.')
                     preco = float(preco_str) if preco_str else 0.0
                     
-                    # Converte estoque: trata possíveis floats vindo do CSV para inteiro
                     estoque_str = linha['Quantidade em Estoque'].replace(',', '.')
                     estoque = int(float(estoque_str)) if estoque_str else 0
 
-                    # --- 2. Sincronização com Banco de Dados ---
-                    # A lógica de 'update_or_create' usa o código como chave única
+                    # UPSERT com filtro de Empresa
+                    # Agora usamos 'empresa' E 'codigo' para identificar o produto único
                     obj, created = Produto.objects.update_or_create(
+                        empresa=empresa,  # <--- VÍNCULO OBRIGATÓRIO
                         codigo=codigo,
                         defaults={
                             'nome': nome,
@@ -64,23 +77,14 @@ class Command(BaseCommand):
                         }
                     )
 
-                    # Contabiliza os resultados para o relatório final
                     if created:
-                        produtos_criados += 1
+                        criados += 1
                     else:
-                        produtos_atualizados += 1
+                        atualizados += 1
 
                 except Exception as e:
-                    # Em caso de erro em uma linha, o script avisa e continua para a próxima
-                    self.stdout.write(
-                        self.style.WARNING(f'Erro no item {linha.get("Descrição", "?")}: {e}')
-                    )
+                    self.stdout.write(self.style.WARNING(f'Erro no item {linha.get("Descrição", "?")}: {e}'))
 
-            # Relatório final de execução no terminal
-            self.stdout.write(
-                self.style.SUCCESS(
-                    f'Importação concluída! '
-                    f'Criados: {produtos_criados} | '
-                    f'Atualizados: {produtos_atualizados}'
-                )
-            )
+            self.stdout.write(self.style.SUCCESS(
+                f'Concluído! Importados para {empresa.nome}: {criados} novos | {atualizados} atualizados'
+            ))
