@@ -1,58 +1,66 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
-    
-    <title>{% block title %}Mateco Sistemas{% endblock %}</title>
-    
-    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    {% block head %}{% endblock %}
-</head>
+    <title>
+      {% block title %}
+        Mateco Sistemas
+      {% endblock %}
+    </title>
 
-<body style="--cor-primaria: {{ empresa_ativa.cor_primaria|default:'#00838f' }}; --cor-secundaria: {{ empresa_ativa.cor_secundaria|default:'#546e7a' }};">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}" />
+
+    {% block head %}
+
+    {% endblock %}
+  </head>
+
+  <body style="--cor-primaria: {{ empresa_ativa.cor_primaria|default:'#00838f' }}; --cor-secundaria: {{ empresa_ativa.cor_secundaria|default:'#546e7a' }};">
     <nav>
-        <div class="brand">
-            {% if empresa_ativa %}
-                {{ empresa_ativa.nome_fantasia}}
-            {% else %}
-                Mateco Sistemas
-            {% endif %}
-        </div>
-        
-        <div class="nav-links">
-            <a href="{% url 'home' %}">Início</a>
-            
-            {% if user.is_authenticated %}
-                <a href="{% url 'emitir' %}">Emitir</a>
-                <a href="{% url 'listar_produtos' %}">Produtos</a>
-                <a href="{% url 'listar_clientes' %}">Clientes</a>
-                <a href="{% url 'listar_notas' %}">Histórico</a>
-                
-                <form action="{% url 'logout' %}" method="post" style="display:inline;">
-                    {% csrf_token %}
-                    <button type="submit" style="background:none; border:none; color:white; cursor:pointer; font-size:16px; font-weight:500;">
-                        Sair
-                    </button>
-                </form>
-            {% else %}
-                <a href="{% url 'login' %}">Entrar</a>
-            {% endif %}
-        </div>
+      <div class="brand">
+        {% if empresa_ativa %}
+          {{ empresa_ativa.nome_fantasia }}
+          {# Selo de Homologação #}
+          {% if empresa.ambiente == 'homologacao' %}
+            <span style="background-color: #ffc107; color: #000; padding: 2px 6px; border-radius: 4px; font-size: 0.7em; font-weight: bold; vertical-align: middle; margin-left: 5px;">EM TESTE</span>
+          {% endif %}
+        {% else %}
+          Mateco Sistemas
+        {% endif %}
+      </div>
+
+      <div class="nav-links">
+        <a href="{% url 'home' %}">Início</a>
+
+        {% if user.is_authenticated %}
+          <a href="{% url 'emitir' %}">Emitir</a>
+          <a href="{% url 'listar_produtos' %}">Produtos</a>
+          <a href="{% url 'listar_clientes' %}">Clientes</a>
+          <a href="{% url 'listar_notas' %}">Histórico</a>
+
+          <form action="{% url 'logout' %}" method="post" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit" style="background:none; border:none; color:white; cursor:pointer; font-size:16px; font-weight:500;">Sair</button>
+          </form>
+        {% else %}
+          <a href="{% url 'login' %}">Entrar</a>
+        {% endif %}
+      </div>
     </nav>
 
     <div class="container">
-        {% block content %}
-        {% endblock %}
+      {% block content %}
+
+      {% endblock %}
     </div>
 
-    <footer>
-        &copy; 2025 Mateco Sistemas - Versão Beta
-    </footer>
+    <footer>&copy; 2025 Mateco Sistemas - Versão Beta</footer>
 
-    {% block scripts %}{% endblock %}
+    {% block scripts %}
 
-</body>
+    {% endblock %}
+  </body>
 </html>
