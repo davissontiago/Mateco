@@ -22,7 +22,7 @@
 
 h1 {
     text-align: center;
-    color: #10295a; /* Azul da Marca */
+    color: var(--cor-primaria); /* Azul da Marca */
     margin: 0 0 15px 0;
     font-size: 1.4rem;
 }
@@ -46,7 +46,7 @@ h1 {
 }
 
 .input-busca:focus {
-    border-color: #dd5114; /* Laranja da Marca (Foco) */
+    border-color: var(--cor-secundaria); /* Laranja da Marca (Foco) */
     outline: none;
 }
 
@@ -110,7 +110,7 @@ h1 {
 
 .item-valor {
     font-weight: bold;
-    color: #10295a; /* Azul da Marca */
+    color: var(--cor-primaria); /* Azul da Marca */
     white-space: nowrap;
     font-size: 0.95em;
 }
@@ -140,7 +140,7 @@ h1 {
     text-align: right;
     font-size: 1.8em;
     font-weight: 800;
-    color: #dd5114; /* Laranja da Marca (Destaque) */
+    color: var(--cor-secundaria); /* Laranja da Marca (Destaque) */
     margin-bottom: 15px;
     border-top: 2px solid #f0f0f0;
     padding-top: 10px;
@@ -170,7 +170,7 @@ h1 {
 /* --- 5. BOTÕES DE AÇÃO --- */
 .btn-completar {
     flex: 2;
-    background: #dd5114; /* Laranja da Marca (Botão Inteligente) */
+    background: var(--cor-secundaria); /* Laranja da Marca (Botão Inteligente) */
     color: white;
     border: none;
     padding: 12px;
@@ -181,7 +181,7 @@ h1 {
 }
 
 .btn-refazer {
-    background: #10295a; /* Azul da Marca */
+    background: var(--cor-primaria); /* Azul da Marca */
     color: white;
     border: none;
     padding: 12px;
@@ -197,7 +197,7 @@ h1 {
 
 .btn-emitir {
     width: 100%;
-    background: #10295a; /* Laranja da Marca (Principal) */
+    background: var(--cor-primaria); /* Laranja da Marca (Principal) */
     color: white;
     padding: 15px;
     font-size: 1.2em;
@@ -205,12 +205,12 @@ h1 {
     border: none;
     border-radius: 8px;
     cursor: pointer;
-    box-shadow: 0 4px 0 #10295a; /* Sombra Laranja Escuro (Efeito 3D) */
+    box-shadow: 0 4px 0 var(--cor-primaria); /* Sombra Laranja Escuro (Efeito 3D) */
 }
 
 .btn-emitir:active {
     transform: translateY(2px);
-    box-shadow: 0 2px 0 #10295a; /* Sombra ajustada */
+    box-shadow: 0 2px 0 var(--cor-primaria); /* Sombra ajustada */
 }
 
 .btn-emitir:disabled {
@@ -254,7 +254,7 @@ dialog::backdrop {
 
 .modal-prod-nome {
     font-weight: bold;
-    color: #10295a; /* Azul da Marca */
+    color: var(--cor-primaria); /* Azul da Marca */
     margin-bottom: 20px;
     font-size: 1.1em;
 }
@@ -264,7 +264,7 @@ dialog::backdrop {
     padding: 10px;
     font-size: 1.5em;
     text-align: center;
-    border: 2px solid #dd5114; /* Laranja da Marca */
+    border: 2px solid var(--cor-secundaria); /* Laranja da Marca */
     border-radius: 8px;
     margin-bottom: 20px;
 }
@@ -285,7 +285,7 @@ dialog::backdrop {
 }
 
 .btn-confirmar {
-    background: #dd5114; /* Laranja da Marca */
+    background: var(--cor-secundaria); /* Laranja da Marca */
     color: white;
     border: none;
     padding: 10px 20px;
@@ -344,7 +344,7 @@ dialog::backdrop {
 
 .btn-pdf {
     display: block;
-    background: #10295a; /* Azul da Marca */
+    background: var(--cor-primaria); /* Azul da Marca */
     color: white;
     padding: 10px;
     margin-top: 8px;
@@ -363,9 +363,9 @@ dialog::backdrop {
 
 .btn-aba {
     padding: 10px 20px;
-    border: 2px solid #10295a; /* Azul da Marca */
+    border: 2px solid var(--cor-primaria); /* Azul da Marca */
     background: transparent;
-    color: #10295a; /* Azul da Marca */
+    color: var(--cor-primaria); /* Azul da Marca */
     cursor: pointer;
     font-weight: bold;
     border-radius: 5px;
@@ -373,7 +373,7 @@ dialog::backdrop {
 }
 
 .btn-aba.ativo {
-    background: #10295a; /* Azul da Marca */
+    background: var(--cor-primaria); /* Azul da Marca */
     color: white;
 }
 

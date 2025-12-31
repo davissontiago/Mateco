@@ -20,7 +20,7 @@ body {
 
 /* --- 2. BARRA DE NAVEGAÇÃO (NAVBAR) --- */
 nav {
-    background-color: #10295a; /* Azul da Marca */
+    background-color: var(--cor-primaria);
     padding: 1rem;
     color: white;
     display: flex;
@@ -50,7 +50,7 @@ nav {
 }
 
 .nav-links a:hover {
-    color: #dd5114; /* Laranja da Marca (Destaque ao passar o mouse) */
+    color: var(--cor-secundaria); /* Laranja da Marca (Destaque ao passar o mouse) */
 }
 
 /* --- 3. CONTAINER DE CONTEÚDO --- */
