@@ -52,8 +52,10 @@ def listar_notas(request):
     if not empresa:
         return render(request, 'notas.html', {'error': 'Usuário sem empresa vinculada.'})
 
-    # FILTRAGEM: Traz apenas as notas da empresa do usuário
-    notas = NotaFiscal.objects.filter(empresa=empresa).order_by('-data_emissao')
+    notas = NotaFiscal.objects.filter(
+        empresa=empresa, 
+        ambiente=empresa.ambiente 
+    ).order_by('-data_emissao')
     
     return render(request, 'notas.html', {'notas': notas, 'empresa': empresa})
 
