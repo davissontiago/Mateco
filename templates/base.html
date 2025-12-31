@@ -11,10 +11,9 @@
 
     {% block head %}{% endblock %}
 </head>
-<body>
 
-    <nav style="background-color: {{ empresa_ativa.cor_cabecalho|default:'#10295a' }};">
-        
+<body style="--cor-primaria: {{ empresa_ativa.cor_primaria|default:'#2c3e50' }}; --cor-secundaria: {{ empresa_ativa.cor_secundaria|default:'#546e7a' }};">
+    <nav>
         <div class="brand">
             {% if empresa_ativa %}
                 {{ empresa_ativa.nome }}

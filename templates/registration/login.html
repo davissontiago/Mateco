@@ -5,7 +5,7 @@
 {% block content %}
 <div style="max-width: 400px; margin: 50px auto; padding: 30px; background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
     
-    <h2 style="text-align: center; color: #10295a; margin-bottom: 25px;">Entrar no Sistema</h2>
+    <h2 style="text-align: center; color: #00838f margin-bottom: 25px;">Entrar no Sistema</h2>
     
     <form method="post">
         {% csrf_token %}
@@ -19,7 +19,7 @@
         {% endif %}
 
         <div style="margin-bottom: 20px;">
-            <label for="id_username" style="display: block; margin-bottom: 8px; color: #10295a; font-weight: 500;">
+            <label for="id_username" style="display: block; margin-bottom: 8px; color: #00838f font-weight: 500;">
                 Usuário:
             </label>
             <input type="text" name="username" autofocus required id="id_username" 
@@ -27,7 +27,7 @@
         </div>
 
         <div style="margin-bottom: 25px;">
-            <label for="id_password" style="display: block; margin-bottom: 8px; color: #10295a; font-weight: 500;">
+            <label for="id_password" style="display: block; margin-bottom: 8px; color: #00838f font-weight: 500;">
                 Senha:
             </label>
             <input type="password" name="password" required id="id_password" 
@@ -35,7 +35,7 @@
         </div>
 
         <button type="submit" 
-                style="width: 100%; padding: 14px; background-color: #dd5114; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 1.1em; font-weight: bold; transition: background 0.3s ease;">
+                style="width: 100%; padding: 14px; background-color: #546e7a; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 1.1em; font-weight: bold; transition: background 0.3s ease;">
             Entrar
         </button>
     </form>

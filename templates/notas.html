@@ -12,7 +12,7 @@
     }
 
     h1 { 
-        color: #10295a; /* Azul da Marca */
+        color: {{ empresa_ativa.cor_primaria|default:'#00838f' }}; /* Azul da Marca */
         text-align: center; 
         margin-bottom: 30px; 
     }
@@ -35,7 +35,7 @@
 
     /* Cabeçalho com a cor Azul da Marca */
     th { 
-        background-color: #10295a; 
+        background-color: {{ empresa_ativa.cor_primaria|default:'#00838f' }}; 
         color: white; 
         font-weight: bold; 
         text-transform: uppercase;
@@ -59,7 +59,7 @@
 
     /* Botão de Visualização (Laranja da Marca) */
     .btn-ver { 
-        background-color: #dd5114; 
+        background-color: {{ empresa_ativa.cor_secundaria|default:'#546e7a' }}; 
         color: white; 
         padding: 8px 15px; 
         text-decoration: none; 
@@ -107,7 +107,7 @@
                     
                     <td>{{ nota.data_emissao|date:"d/m/Y H:i" }}</td>
                     
-                    <td style="color: #10295a; font-weight: bold;">
+                    <td style="color: {{ empresa_ativa.cor_primaria|default:'#00838f' }}; font-weight: bold;">
                         R$ {{ nota.valor_total }}
                     </td>
                     

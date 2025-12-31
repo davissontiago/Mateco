@@ -26,10 +26,16 @@ class Empresa(models.Model):
     inscricao_estadual = models.CharField(
         max_length=20, blank=True, null=True, verbose_name="Inscrição Estadual"
     )
-    cor_cabecalho = models.CharField(
+    cor_primaria = models.CharField(
         max_length=10,
         default="#10295a",
-        verbose_name="Cor do Cabeçalho (Hex)",
+        verbose_name="Cor Primaria (Hex)",
+        help_text="Ex: #FF0000 para vermelho",
+    )
+    cor_secundaria = models.CharField(
+        max_length=10,
+        default="#10295a",
+        verbose_name="Cor Secundaria (Hex)",
         help_text="Ex: #FF0000 para vermelho",
     )
 

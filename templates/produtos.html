@@ -24,7 +24,7 @@
         font-size: 1rem;
     }
     .btn-buscar {
-        background-color: #10295a;
+        background-color: {{ empresa_ativa.cor_primaria|default:'#00838f' }};
         color: white;
         border: none;
         padding: 0 20px;
@@ -43,7 +43,7 @@
         box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
     }
     th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #eee; }
-    th { background-color: #10295a; color: white; font-size: 0.9em; text-transform: uppercase; }
+    th { background-color: {{ empresa_ativa.cor_primaria|default:'#00838f' }}; color: white; font-size: 0.9em; text-transform: uppercase; }
     tr:hover { background-color: #f8f9fa; }
 
     /* Destaques */
@@ -55,7 +55,7 @@
 
 {% block content %}
 <div class="container-produtos">
-    <h1 style="color: #10295a; text-align: center; margin-bottom: 20px;">Catálogo de Produtos</h1>
+    <h1 style="color: {{ empresa_ativa.cor_primaria|default:'#00838f' }}; text-align: center; margin-bottom: 20px;">Catálogo de Produtos</h1>
 
     <form method="get" class="search-box">
         <input type="text" name="q" class="search-input" placeholder="Buscar por nome..." value="{{ termo_busca }}">
