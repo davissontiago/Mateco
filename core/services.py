@@ -38,15 +38,13 @@ class NuvemFiscalService:
         if empresa.ambiente == 'producao':
             client_id = empresa.nuvem_client_id_producao
             client_secret = empresa.nuvem_client_secret_producao
-            scope = "cnpj" 
         else:
             client_id = empresa.nuvem_client_id_homologacao
             client_secret = empresa.nuvem_client_secret_homologacao
-            scope = "cnpj"
             
         # 2. Validação básica
         if not client_id or not client_secret:
-            print(f"ERRO: Credenciais não preenchidas para o ambiente: {empresa.get_ambiente_display()}")
+            print(f"ERRO: Sem chaves para ambiente {empresa.ambiente}")
             return None
         
         # 3. Requisição do Token
@@ -54,7 +52,7 @@ class NuvemFiscalService:
             "grant_type": "client_credentials",
             "client_id": client_id,
             "client_secret": client_secret,
-            "scope": scope
+            "scope": "cnpj"
         }
         
         try:
@@ -80,6 +78,7 @@ class NuvemFiscalService:
             # Definições dinâmicas
             env_str = "producao" if is_producao else "homologacao"
             tp_amb_code = 1 if is_producao else 2  
+            
             serie_nota = 2 if is_producao else 1 # Quero 2 para produção e 1 para testes
             
             # Seleciona a URL correta
@@ -184,10 +183,13 @@ class NuvemFiscalService:
             # 6. Numeração e Identificação
             data_emissao = datetime.now().astimezone().isoformat()
             
-            # Busca a última nota da SÉRIE correta
-            ultima_nota = NotaFiscal.objects.filter(empresa=empresa).order_by("-numero").first()
-            numero_nota = (ultima_nota.numero + 1) if ultima_nota else 1
-
+            ultima = NotaFiscal.objects.filter(
+                empresa=empresa, 
+                serie=serie_nota  # <--- CRUCIAL: Filtra só a série atual
+            ).order_by("-numero").first()
+            
+            numero_nota = (ultima.numero + 1) if ultima else 1
+            
             payload = {
                 "ambiente": env_str,
                 "infNFe": {
