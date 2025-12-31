@@ -56,26 +56,19 @@ class NuvemFiscalService:
             return None
 
     @classmethod
-    def emitir_nfce(
-        cls, empresa, itens_carrinho, forma_pagamento="01", cliente=None
-    ):  # <--- [NOVO] Adicionado parametro
+    def emitir_nfce(cls, empresa, itens_carrinho, forma_pagamento="01", cliente=None):
         """
         Monta o XML/JSON da NFC-e e envia para autorização.
         """
         try:
-            # 1. Autenticação usando a empresa correta
+            # 1. Autenticação
             token = cls.pegar_token(empresa)
             if not token:
-                return (
-                    False,
-                    "Falha na autenticação (Verifique Client ID/Secret no cadastro da Empresa)",
-                    0.0,
-                )
+                return False, "Falha na autenticação", 0.0
 
-            cod_municipio = (
-                "2112209"  # Default Timon (ou adicione 'codigo_ibge' no model Empresa)
-            )
+            cod_municipio = "2112209" # Timon-MA
 
+            # 2. Dados do Emitente
             emitente_data = {
                 "CNPJ": empresa.cnpj,
                 "xNome": empresa.nome,
@@ -91,20 +84,17 @@ class NuvemFiscalService:
                     "xPais": "BRASIL",
                 },
                 "IE": empresa.inscricao_estadual,
-                "CRT": int(empresa.crt),  # Pega o CRT escolhido no cadastro
+                "CRT": int(empresa.crt),
             }
 
-            # --- [NOVO] 2. Processamento do Cliente (Destinatário) ---
+            # 3. Processamento do Destinatário
             dest_data = None
             if cliente:
-                # Remove pontuação para evitar erro na SEFAZ
-                doc_limpo = (
-                    cliente.cpf_cnpj.replace(".", "").replace("-", "").replace("/", "")
-                )
-
+                doc_limpo = cliente.cpf_cnpj.replace(".", "").replace("-", "").replace("/", "")
+                
                 dest_data = {
                     "xNome": cliente.nome,
-                    "indIEDest": "9",  # 9 = Não Contribuinte
+                    "indIEDest": 9, # Importante: Inteiro (sem aspas)
                 }
 
                 if len(doc_limpo) == 11:
@@ -112,7 +102,6 @@ class NuvemFiscalService:
                 else:
                     dest_data["CNPJ"] = doc_limpo
 
-                # Endereço do cliente (Opcional, mas bom ter)
                 if cliente.endereco:
                     dest_data["enderDest"] = {
                         "xLgr": cliente.endereco,
@@ -121,13 +110,12 @@ class NuvemFiscalService:
                         "cMun": cod_municipio,
                         "xMun": cliente.cidade,
                         "UF": cliente.uf,
-                        "CEP": cliente.cep or "00000000",
+                        "CEP": cliente.cep or "65630000",
                         "cPais": "1058",
-                        "xPais": "BRASIL",
+                        "xPais": "BRASIL"
                     }
-            # ---------------------------------------------------------
 
-            # --- 3. Processamento dos Itens do Carrinho ---
+            # 4. Itens
             detalhes = []
             valor_total_nota = 0.0
 
@@ -162,21 +150,16 @@ class NuvemFiscalService:
                 detalhes.append(detalhe)
                 valor_total_nota += total_item
 
-            # --- 4. Configuração do Pagamento ---
+            # 5. Pagamento
             det_pag = {"tPag": forma_pagamento, "vPag": round(valor_total_nota, 2)}
-
-            if forma_pagamento in ["03", "04", "17"]:  # Cartões ou PIX
+            if forma_pagamento in ["03", "04", "17"]:
                 det_pag["card"] = {"tpIntegra": 2}
 
-            # --- 5. Numeração e Identificação da Nota ---
+            # 6. Payload Final
             data_emissao = datetime.now().astimezone().isoformat()
-
-            ultima_nota = (
-                NotaFiscal.objects.filter(empresa=empresa).order_by("-numero").first()
-            )
+            ultima_nota = NotaFiscal.objects.filter(empresa=empresa).order_by("-numero").first()
             numero_nota = (ultima_nota.numero + 1) if ultima_nota else 1
 
-            # --- 6. Montagem do Payload Final ---
             payload = {
                 "ambiente": "homologacao",
                 "infNFe": {
@@ -201,28 +184,15 @@ class NuvemFiscalService:
                         "verProc": "1.0",
                     },
                     "emit": emitente_data,
-                    # "dest": dest_data, (Inserido dinamicamente abaixo)
                     "det": detalhes,
                     "total": {
                         "ICMSTot": {
-                            "vBC": 0.00,
-                            "vICMS": 0.00,
-                            "vICMSDeson": 0.00,
-                            "vFCP": 0.00,
-                            "vBCST": 0.00,
-                            "vST": 0.00,
-                            "vFCPST": 0.00,
-                            "vFCPSTRet": 0.00,
-                            "vProd": valor_total_nota,
-                            "vFrete": 0.00,
-                            "vSeg": 0.00,
-                            "vDesc": 0.00,
-                            "vII": 0.00,
-                            "vIPI": 0.00,
-                            "vIPIDevol": 0.00,
-                            "vPIS": 0.00,
-                            "vCOFINS": 0.00,
-                            "vOutro": 0.00,
+                            "vBC": 0.00, "vICMS": 0.00, "vICMSDeson": 0.00,
+                            "vFCP": 0.00, "vBCST": 0.00, "vST": 0.00,
+                            "vFCPST": 0.00, "vFCPSTRet": 0.00, "vProd": valor_total_nota,
+                            "vFrete": 0.00, "vSeg": 0.00, "vDesc": 0.00,
+                            "vII": 0.00, "vIPI": 0.00, "vIPIDevol": 0.00,
+                            "vPIS": 0.00, "vCOFINS": 0.00, "vOutro": 0.00,
                             "vNF": valor_total_nota,
                         }
                     },
@@ -231,12 +201,11 @@ class NuvemFiscalService:
                 },
             }
 
-            # --- [NOVO] INSERE O CLIENTE NO PAYLOAD SE EXISTIR ---
+            # Insere o destinatário se existir
             if dest_data:
                 payload["infNFe"]["dest"] = dest_data
-            # -----------------------------------------------------
 
-            # --- 7. Envio para a API ---
+            # 7. Envio
             url = f"{cls.BASE_URL}/nfce"
             headers = {
                 "Authorization": f"Bearer {token}",
@@ -249,11 +218,8 @@ class NuvemFiscalService:
             except:
                 return False, f"Erro Crítico ({resp.status_code}): {resp.text}", 0.0
 
-            # --- 8. Tratamento do Retorno ---
             if resp_data.get("status") == "rejeitado":
-                motivo = resp_data.get("autorizacao", {}).get(
-                    "motivo_status", "Motivo desconhecido"
-                )
+                motivo = resp_data.get("autorizacao", {}).get("motivo_status", "Motivo desconhecido")
                 return False, f"REJEIÇÃO: {motivo}", 0.0
 
             if resp.status_code in [200, 201]:

@@ -147,6 +147,7 @@ def emitir_nota(request):
             if cliente_id:
                 # Busca o cliente e garante que é da mesma empresa (Segurança)
                 cliente = Cliente.objects.filter(id=cliente_id, empresa=empresa).first()
+                
             
             if not itens: 
                 return JsonResponse({'mensagem': 'Carrinho vazio'}, status=400)
