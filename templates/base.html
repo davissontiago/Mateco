@@ -21,6 +21,7 @@
             
             {% if user.is_authenticated %}
                 <a href="{% url 'emitir' %}">Emitir</a>
+                <a href="{% url 'listar_produtos' %}">Produtos</a>
                 <a href="{% url 'listar_notas' %}">Histórico</a>
                 
                 <form action="{% url 'logout' %}" method="post" style="display:inline;">

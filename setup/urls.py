@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.urls import path, include
+from estoque.views import listar_produtos
 from core.views import (
     home, 
     emitir, 
@@ -38,6 +39,9 @@ urlpatterns = [
     
     # Histórico e listagem de notas fiscais
     path('notas/', listar_notas, name='listar_notas'),
+    
+    # Estoque (Nova Rota)
+    path('produtos/', listar_produtos, name='listar_produtos'),
 
     # ==================================================
     # 3. ENDPOINTS DE API E PROCESSAMENTO
