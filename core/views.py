@@ -151,7 +151,7 @@ def emitir_nota(request):
             if not itens: 
                 return JsonResponse({'mensagem': 'Carrinho vazio'}, status=400)
             
-            sucesso, resultado, valor = NuvemFiscalService.emitir_nfce(empresa, itens, forma_pagamento)
+            sucesso, resultado, valor = NuvemFiscalService.emitir_nfce(empresa, itens, forma_pagamento, cliente=cliente)
 
             if sucesso:
                 # Cria o registro local vinculado à empresa correta
