@@ -37,11 +37,6 @@ def home(request):
 
 @login_required
 def emitir(request):
-    empresa = get_empresa_usuario(request)
-    return render(request, 'emitir.html', {'empresa': empresa})
-
-@login_required
-def emitir(request):
     try:
         empresa = request.user.perfil.empresa
     except:
@@ -79,7 +74,6 @@ def buscar_produtos(request):
         except (ValueError, TypeError): 
             return JsonResponse({'error': 'Valor inválido'}, status=400)
             
-        # FILTRAGEM: Busca apenas produtos da minha empresa que tenham preço
         produtos = list(Produto.objects.filter(empresa=empresa, preco__gt=0).order_by('preco'))
         
         if not produtos: 
