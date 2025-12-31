@@ -21,9 +21,9 @@ class NuvemFiscalService:
         Retorna a URL correta da API dependendo do ambiente da empresa.
         """
         if empresa.ambiente == 'producao':
-            return "https://api.nuvemfiscal.com.br/nfe/v2"
+            return "https://api.nuvemfiscal.com.br"
         else:
-            return "https://api.sandbox.nuvemfiscal.com.br/nfe/v2"
+            return "https://api.sandbox.nuvemfiscal.com.br"
 
     @classmethod
     def pegar_token(cls, empresa):
@@ -52,7 +52,7 @@ class NuvemFiscalService:
             "grant_type": "client_credentials",
             "client_id": client_id,
             "client_secret": client_secret,
-            "scope": "cnpj"
+            "scope": "nfce cnpj"
         }
         
         try:
