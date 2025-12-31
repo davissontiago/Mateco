@@ -15,7 +15,13 @@
 
 {% block content %}
 <div class="form-container">
-    <h2 style="color: var(--cor-primaria); text-align: center; margin-bottom: 25px;">Cadastro de Cliente</h2>
+    <h2 style="color: var(--cor-primaria); text-align: center; margin-bottom: 25px;">
+        {% if form.instance.pk %}
+            Editar Cliente
+        {% else %}
+            Novo Cliente
+        {% endif %}
+    </h2>
     
     <form method="post">
         {% csrf_token %}

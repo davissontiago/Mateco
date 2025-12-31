@@ -3,6 +3,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse, HttpResponse 
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages  # <--- ADICIONE ESTA LINHA AQUI
 
 # Importações locais do projeto
 from .models import NotaFiscal, Empresa, Cliente
@@ -38,6 +39,17 @@ def home(request):
 def emitir(request):
     empresa = get_empresa_usuario(request)
     return render(request, 'emitir.html', {'empresa': empresa})
+
+@login_required
+def emitir(request):
+    try:
+        empresa = request.user.perfil.empresa
+    except:
+        return redirect('home')
+        
+    clientes = Cliente.objects.filter(empresa=empresa).order_by('nome')
+
+    return render(request, 'emitir.html', {'clientes': clientes})
 
 @login_required
 def listar_notas(request):
@@ -130,19 +142,22 @@ def emitir_nota(request):
             itens = dados.get('itens', [])
             forma_pagamento = dados.get('forma_pagamento', '01')
             
+            cliente_id = dados.get('cliente_id') 
+            cliente = None
+            if cliente_id:
+                # Busca o cliente e garante que é da mesma empresa (Segurança)
+                cliente = Cliente.objects.filter(id=cliente_id, empresa=empresa).first()
+            
             if not itens: 
                 return JsonResponse({'mensagem': 'Carrinho vazio'}, status=400)
             
-            # --- ATENÇÃO ---
-            # No próximo passo, vamos passar o objeto 'empresa' para este serviço
-            # para que ele use o CNPJ e Token corretos.
-            # Por enquanto, ele ainda vai ler do .env (Monolítico)
             sucesso, resultado, valor = NuvemFiscalService.emitir_nfce(empresa, itens, forma_pagamento)
 
             if sucesso:
                 # Cria o registro local vinculado à empresa correta
                 nota = NotaFiscal.objects.create(
-                    empresa=empresa,  # <--- VÍNCULO IMPORTANTE
+                    empresa=empresa, 
+                    cliente=cliente,
                     id_nota=resultado.get('id'),
                     numero=resultado.get('numero', 0),
                     serie=resultado.get('serie', 0),
@@ -176,22 +191,29 @@ def listar_clientes(request):
     return render(request, 'clientes.html', {'clientes': clientes, 'termo_busca': termo})
 
 @login_required
-def cadastrar_cliente(request):
+def cadastrar_cliente(request, cliente_id=None): 
     try:
         empresa = request.user.perfil.empresa
     except:
         messages.error(request, "Usuário sem empresa vinculada.")
         return redirect('home')
 
+    cliente = None
+    if cliente_id:
+        cliente = get_object_or_404(Cliente, id=cliente_id, empresa=empresa)
+
     if request.method == 'POST':
-        form = ClienteForm(request.POST)
+        form = ClienteForm(request.POST, instance=cliente)
+        
         if form.is_valid():
-            cliente = form.save(commit=False)
-            cliente.empresa = empresa # Vincula o cliente à empresa logada
-            cliente.save()
-            messages.success(request, f"Cliente {cliente.nome} cadastrado com sucesso!")
+            obj = form.save(commit=False)
+            obj.empresa = empresa
+            obj.save()
+            
+            msg = f"Cliente {obj.nome} atualizado com sucesso!" if cliente_id else f"Cliente {obj.nome} cadastrado com sucesso!"
+            messages.success(request, msg)
             return redirect('listar_clientes')
     else:
-        form = ClienteForm()
+        form = ClienteForm(instance=cliente)
 
-    return render(request, 'form_cliente.html', {'form': form})
+    return render(request, 'form_clientes.html', {'form': form})

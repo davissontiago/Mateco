@@ -4,10 +4,11 @@ import json
 from datetime import datetime
 from .models import NotaFiscal
 
+
 class NuvemFiscalService:
     """
     Serviço responsável pela comunicação com a API da Nuvem Fiscal.
-    
+
     Agora 100% compatível com o sistema Multi-Empresa (Multi-Tenant).
     Recebe o objeto 'empresa' como parâmetro para usar as credenciais corretas.
     """
@@ -20,7 +21,7 @@ class NuvemFiscalService:
     def pegar_token(cls, empresa):
         """
         Obtém o token de acesso (Bearer Token) via OAuth2.
-        
+
         Utiliza as credenciais CLIENT_ID e CLIENT_SECRET vindas do objeto EMPRESA
         do banco de dados, e não mais do arquivo .env.
         """
@@ -55,31 +56,25 @@ class NuvemFiscalService:
             return None
 
     @classmethod
-    def emitir_nfce(cls, empresa, itens_carrinho, forma_pagamento="01"):
+    def emitir_nfce(
+        cls, empresa, itens_carrinho, forma_pagamento="01", cliente=None
+    ):  # <--- [NOVO] Adicionado parametro
         """
         Monta o XML/JSON da NFC-e e envia para autorização.
-        
-        Args:
-            empresa (Empresa): Objeto do banco com dados fiscais da loja.
-            itens_carrinho (list): Lista de dicionários com dados dos produtos.
-            forma_pagamento (str): Código da forma de pagamento (ex: '01').
-            
-        Returns:
-            tuple: (sucesso: bool, dados_ou_erro: dict/str, valor_total: float)
         """
         try:
             # 1. Autenticação usando a empresa correta
             token = cls.pegar_token(empresa)
             if not token:
-                return False, "Falha na autenticação (Verifique Client ID/Secret no cadastro da Empresa)", 0.0
+                return (
+                    False,
+                    "Falha na autenticação (Verifique Client ID/Secret no cadastro da Empresa)",
+                    0.0,
+                )
 
-            # --- 2. Dados do Emitente (Vindos do Banco de Dados) ---
-            
-            # O código IBGE do município é obrigatório. 
-            # Se não tiver no banco, tentamos um padrão (São Luís/MA) ou deixamos a API validar.
-            # Idealmente, o model Empresa deve ter esse campo 'codigo_ibge'.
-            # Aqui vou assumir um default seguro ou o valor que estava no seu código.
-            cod_municipio = "2112209" # Default Timon (ou adicione 'codigo_ibge' no model Empresa)
+            cod_municipio = (
+                "2112209"  # Default Timon (ou adicione 'codigo_ibge' no model Empresa)
+            )
 
             emitente_data = {
                 "CNPJ": empresa.cnpj,
@@ -88,7 +83,7 @@ class NuvemFiscalService:
                     "xLgr": empresa.logradouro,
                     "nro": empresa.numero,
                     "xBairro": empresa.bairro,
-                    "cMun": cod_municipio, 
+                    "cMun": cod_municipio,
                     "xMun": empresa.cidade,
                     "UF": empresa.uf,
                     "CEP": empresa.cep,
@@ -96,8 +91,41 @@ class NuvemFiscalService:
                     "xPais": "BRASIL",
                 },
                 "IE": empresa.inscricao_estadual,
-                "CRT": int(empresa.crt), # Pega o CRT escolhido no cadastro (1, 2 ou 3)
+                "CRT": int(empresa.crt),  # Pega o CRT escolhido no cadastro
             }
+
+            # --- [NOVO] 2. Processamento do Cliente (Destinatário) ---
+            dest_data = None
+            if cliente:
+                # Remove pontuação para evitar erro na SEFAZ
+                doc_limpo = (
+                    cliente.cpf_cnpj.replace(".", "").replace("-", "").replace("/", "")
+                )
+
+                dest_data = {
+                    "xNome": cliente.nome,
+                    "indIEDest": "9",  # 9 = Não Contribuinte
+                }
+
+                if len(doc_limpo) == 11:
+                    dest_data["CPF"] = doc_limpo
+                else:
+                    dest_data["CNPJ"] = doc_limpo
+
+                # Endereço do cliente (Opcional, mas bom ter)
+                if cliente.endereco:
+                    dest_data["enderDest"] = {
+                        "xLgr": cliente.endereco,
+                        "nro": cliente.numero or "S/N",
+                        "xBairro": cliente.bairro or "Centro",
+                        "cMun": cod_municipio,
+                        "xMun": cliente.cidade,
+                        "UF": cliente.uf,
+                        "CEP": cliente.cep or "00000000",
+                        "cPais": "1058",
+                        "xPais": "BRASIL",
+                    }
+            # ---------------------------------------------------------
 
             # --- 3. Processamento dos Itens do Carrinho ---
             detalhes = []
@@ -126,9 +154,6 @@ class NuvemFiscalService:
                         "indTot": 1,
                     },
                     "imposto": {
-                        # Ajuste simples: Se for CRT 1 (Simples), usa CSOSN.
-                        # Se for CRT 3 (Normal), deveria usar CST.
-                        # Aqui mantemos a lógica original para Simples Nacional.
                         "ICMS": {"ICMSSN102": {"orig": 0, "CSOSN": "102"}},
                         "PIS": {"PISNT": {"CST": "07"}},
                         "COFINS": {"COFINSNT": {"CST": "07"}},
@@ -136,41 +161,39 @@ class NuvemFiscalService:
                 }
                 detalhes.append(detalhe)
                 valor_total_nota += total_item
-                
+
             # --- 4. Configuração do Pagamento ---
-            det_pag = {
-                "tPag": forma_pagamento, 
-                "vPag": round(valor_total_nota, 2)
-            }
-            
-            if forma_pagamento in ["03", "04", "17"]: # Cartões ou PIX
+            det_pag = {"tPag": forma_pagamento, "vPag": round(valor_total_nota, 2)}
+
+            if forma_pagamento in ["03", "04", "17"]:  # Cartões ou PIX
                 det_pag["card"] = {"tpIntegra": 2}
 
             # --- 5. Numeração e Identificação da Nota ---
             data_emissao = datetime.now().astimezone().isoformat()
-            
-            # Busca a última nota APENAS desta empresa para seguir a sequência correta
-            ultima_nota = NotaFiscal.objects.filter(empresa=empresa).order_by("-numero").first()
+
+            ultima_nota = (
+                NotaFiscal.objects.filter(empresa=empresa).order_by("-numero").first()
+            )
             numero_nota = (ultima_nota.numero + 1) if ultima_nota else 1
 
             # --- 6. Montagem do Payload Final ---
             payload = {
-                "ambiente": "homologacao", # Mudar para 'producao' quando for valer
+                "ambiente": "homologacao",
                 "infNFe": {
                     "versao": "4.00",
                     "ide": {
-                        "cUF": 21, # Maranhão (fixo por enquanto)
+                        "cUF": 21,
                         "natOp": "VENDA",
-                        "mod": 65, # NFC-e
-                        "serie": 2, # Serie 2 padrão
+                        "mod": 65,
+                        "serie": 2,
                         "nNF": numero_nota,
                         "dhEmi": data_emissao,
                         "tpNF": 1,
                         "idDest": 1,
                         "cMunFG": cod_municipio,
-                        "tpImp": 4, # DANFE NFC-e
+                        "tpImp": 4,
                         "tpEmis": 1,
-                        "tpAmb": 2, # 2=Homologação
+                        "tpAmb": 2,
                         "finNFe": 1,
                         "indFinal": 1,
                         "indPres": 1,
@@ -178,22 +201,40 @@ class NuvemFiscalService:
                         "verProc": "1.0",
                     },
                     "emit": emitente_data,
+                    # "dest": dest_data, (Inserido dinamicamente abaixo)
                     "det": detalhes,
                     "total": {
                         "ICMSTot": {
-                            "vBC": 0.00, "vICMS": 0.00, "vICMSDeson": 0.00,
-                            "vFCP": 0.00, "vBCST": 0.00, "vST": 0.00,
-                            "vFCPST": 0.00, "vFCPSTRet": 0.00, "vProd": valor_total_nota,
-                            "vFrete": 0.00, "vSeg": 0.00, "vDesc": 0.00,
-                            "vII": 0.00, "vIPI": 0.00, "vIPIDevol": 0.00,
-                            "vPIS": 0.00, "vCOFINS": 0.00, "vOutro": 0.00,
+                            "vBC": 0.00,
+                            "vICMS": 0.00,
+                            "vICMSDeson": 0.00,
+                            "vFCP": 0.00,
+                            "vBCST": 0.00,
+                            "vST": 0.00,
+                            "vFCPST": 0.00,
+                            "vFCPSTRet": 0.00,
+                            "vProd": valor_total_nota,
+                            "vFrete": 0.00,
+                            "vSeg": 0.00,
+                            "vDesc": 0.00,
+                            "vII": 0.00,
+                            "vIPI": 0.00,
+                            "vIPIDevol": 0.00,
+                            "vPIS": 0.00,
+                            "vCOFINS": 0.00,
+                            "vOutro": 0.00,
                             "vNF": valor_total_nota,
                         }
                     },
                     "transp": {"modFrete": 9},
-                    "pag": {"detPag": [det_pag] },
+                    "pag": {"detPag": [det_pag]},
                 },
             }
+
+            # --- [NOVO] INSERE O CLIENTE NO PAYLOAD SE EXISTIR ---
+            if dest_data:
+                payload["infNFe"]["dest"] = dest_data
+            # -----------------------------------------------------
 
             # --- 7. Envio para a API ---
             url = f"{cls.BASE_URL}/nfce"

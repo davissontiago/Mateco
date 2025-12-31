@@ -53,6 +53,7 @@
                     <th>CPF / CNPJ</th>
                     <th>Telefone</th>
                     <th>Cidade</th>
+                    <th style="width: 80px; text-align: center;">Ações</th> </tr>
                 </tr>
             </thead>
             <tbody>
@@ -62,6 +63,8 @@
                     <td>{{ c.cpf_cnpj }}</td>
                     <td>{{ c.telefone|default:"-" }}</td>
                     <td>{{ c.cidade }}-{{ c.uf }}</td>
+                    <td style="text-align: center;">
+                        <a href="{% url 'editar_cliente' c.id %}" style="text-decoration: none; font-size: 1.2em;" title="Editar">✏️</a>
                 </tr>
                 {% endfor %}
             </tbody>

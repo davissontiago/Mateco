@@ -60,4 +60,5 @@ urlpatterns = [
     # Gestão de Clientes
     path('clientes/', listar_clientes, name='listar_clientes'),
     path('clientes/novo/', cadastrar_cliente, name='cadastrar_cliente'),
+    path('clientes/editar/<int:cliente_id>/', cadastrar_cliente, name='editar_cliente'),
 ]
