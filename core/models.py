@@ -19,7 +19,8 @@ class Empresa(models.Model):
     ]
 
     # Identificação
-    nome = models.CharField(max_length=100, verbose_name="Razão Social / Nome Fantasia")
+    nome_fantasia = models.CharField(max_length=100, verbose_name="Nome Fantasia")
+    nome = models.CharField(max_length=100, verbose_name="Razão Social")
     cnpj = models.CharField(
         max_length=14, unique=True, verbose_name="CNPJ (apenas números)"
     )
