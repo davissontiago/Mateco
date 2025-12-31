@@ -31,11 +31,11 @@ const modalQtd = document.getElementById('modalQuantidade');
  */
 buscaInput.addEventListener('input', async (e) => {
     const termo = e.target.value;
-    
+
     // Limpa sugestões se o termo for muito curto
-    if (termo.length < 2) { 
-        listaSugestoes.style.display = 'none'; 
-        return; 
+    if (termo.length < 2) {
+        listaSugestoes.style.display = 'none';
+        return;
     }
 
     // Busca produtos no backend
@@ -43,7 +43,7 @@ buscaInput.addEventListener('input', async (e) => {
     const produtos = await res.json();
 
     listaSugestoes.innerHTML = '';
-    
+
     // Renderiza a lista de sugestões
     if (produtos.length > 0) {
         listaSugestoes.style.display = 'block';
@@ -84,9 +84,9 @@ document.addEventListener('click', (e) => {
 function abrirModalQtd(prod) {
     produtoSelecionadoTemp = prod;
     document.getElementById('nomeProdModal').innerText = prod.nome;
-    document.getElementById('qtdInputModal').value = 1; 
+    document.getElementById('qtdInputModal').value = 1;
 
-    listaSugestoes.style.display = 'none'; 
+    listaSugestoes.style.display = 'none';
     modalQtd.showModal();
 
     // Dá foco no input de quantidade após o modal abrir
@@ -99,7 +99,7 @@ function abrirModalQtd(prod) {
 function fecharModalQtd() {
     modalQtd.close();
     produtoSelecionadoTemp = null;
-    buscaInput.value = ''; 
+    buscaInput.value = '';
 }
 
 /**
@@ -144,7 +144,7 @@ async function completarValor() {
     }
 
     const falta = valorAlvo - totalAtual;
-    
+
     // Feedback visual no botão
     const btn = document.querySelector('.btn-completar');
     const txtOriginal = btn.innerText;
@@ -154,9 +154,9 @@ async function completarValor() {
     try {
         const res = await fetch(`/api/produtos/?simular=true&valor=${falta}`);
         const data = await res.json();
-        
+
         if (data.error) { alert(data.error); return; }
-        
+
         // Adiciona os itens simulados ao carrinho existente
         data.itens.forEach(item => carrinho.push(item));
         atualizarCarrinho();
@@ -174,7 +174,7 @@ async function completarValor() {
 async function refazerSimulacao() {
     const valorAlvo = parseFloat(document.getElementById('valorAlvoInput').value);
     if (isNaN(valorAlvo) || valorAlvo <= 0) { alert("Digite uma meta para refazer."); return; }
-    
+
     carrinho = [];
     atualizarCarrinho();
     await completarValor();
@@ -258,7 +258,7 @@ function atualizarCarrinho() {
 
     // Rola o carrinho para o final para mostrar o último item adicionado
     divCarrinho.scrollTop = divCarrinho.scrollHeight;
-    
+
     totalDisplay.innerText = "R$ " + total.toFixed(2);
     btnEmitir.disabled = false;
     btnEmitir.style.background = "#27ae60"; // Mantém a cor original verde se houver itens
@@ -313,7 +313,7 @@ function emitirNota() {
     // Define o evento de clique do botão "Confirmar" dentro do modal
     document.getElementById('btnConfirmarFinal').onclick = function () {
         modalConfirm.close();
-        processarEnvioReal(); 
+        processarEnvioReal();
     };
 }
 
@@ -326,6 +326,11 @@ async function processarEnvioReal() {
     const statusDiv = document.getElementById('status');
     const formaPagamento = document.getElementById('forma_pagamento').value;
 
+    // --- NOVO: Captura o cliente selecionado ---
+    const clienteSelect = document.getElementById('cliente-select');
+    const clienteId = clienteSelect ? clienteSelect.value : null;
+    // -------------------------------------------
+
     statusDiv.innerHTML = '';
 
     btn.disabled = true; btn.innerText = "🚀 Enviando...";
@@ -337,13 +342,13 @@ async function processarEnvioReal() {
             headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrftoken },
             body: JSON.stringify({
                 itens: carrinho,
-                forma_pagamento: formaPagamento
+                forma_pagamento: formaPagamento,
+                cliente_id: clienteId 
             })
         });
         const data = await res.json();
 
         if (res.ok) {
-            // Sucesso: Mostra link para download do PDF
             statusDiv.innerHTML = `
         <div class="sucesso-msg" style="position: relative;">
             <span onclick="this.parentElement.remove()" style="position: absolute; right: 10px; top: 5px; cursor: pointer; font-weight: bold;">×</span>
@@ -355,7 +360,6 @@ async function processarEnvioReal() {
             carrinho = [];
             atualizarCarrinho();
         } else {
-            // Erro validado pelo backend
             statusDiv.innerHTML = `
                 <div class="alerta-personalizado alerta-erro">
                     <span class="btn-fechar-alerta" onclick="this.parentElement.remove()">×</span>
@@ -363,7 +367,6 @@ async function processarEnvioReal() {
                 </div>`;
         }
     } catch (e) {
-        // Erro de rede ou exceção não tratada
         statusDiv.innerHTML = `<div class="alerta-personalizado alerta-erro"><h3>⚠️ Erro de comunicação</h3></div>`;
     } finally {
         btn.innerText = "EMITIR NOTA";
