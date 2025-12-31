@@ -50,7 +50,7 @@
         <div class="total-display" id="totalDisplay" style="color: {{ empresa_ativa.cor_secundaria|default:'#546e7a' }};">R$ 0,00</div>
 
         <div class="area-pagamento" style="margin-bottom: 15px;">
-            <label for="forma_pagamento" style="font-weight: bold; display: block; margin-bottom: 5px; color: #00838f;">
+            <label for="forma_pagamento" style="font-weight: bold; display: block; margin-bottom: 5px; color: {{ empresa_ativa.cor_primaria|default:'#00838f' }};">
                 Forma de Pagamento:
             </label>
             <select id="forma_pagamento" class="input-busca" style="width: 100%; height: 45px;">
