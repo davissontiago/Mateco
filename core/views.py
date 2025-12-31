@@ -5,10 +5,12 @@ from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
 
 # Importações locais do projeto
-from .models import NotaFiscal, Empresa
+from .models import NotaFiscal, Empresa, Cliente
+from .forms import ClienteForm
 from estoque.models import Produto
 from .utils import simular_carrinho_inteligente
 from .services import NuvemFiscalService 
+
 
 # ==================================================
 # FUNÇÃO AUXILIAR DE SEGURANÇA
@@ -156,3 +158,40 @@ def emitir_nota(request):
             return JsonResponse({'mensagem': f"Erro interno: {str(e)}"}, status=500)
             
     return JsonResponse({'mensagem': 'Método não permitido'}, status=405)
+
+@login_required
+def listar_clientes(request):
+    try:
+        empresa = request.user.perfil.empresa
+    except:
+        return redirect('home')
+
+    termo = request.GET.get('q', '')
+    
+    if termo:
+        clientes = Cliente.objects.filter(empresa=empresa, nome__icontains=termo).order_by('nome')
+    else:
+        clientes = Cliente.objects.filter(empresa=empresa).order_by('nome')
+
+    return render(request, 'clientes.html', {'clientes': clientes, 'termo_busca': termo})
+
+@login_required
+def cadastrar_cliente(request):
+    try:
+        empresa = request.user.perfil.empresa
+    except:
+        messages.error(request, "Usuário sem empresa vinculada.")
+        return redirect('home')
+
+    if request.method == 'POST':
+        form = ClienteForm(request.POST)
+        if form.is_valid():
+            cliente = form.save(commit=False)
+            cliente.empresa = empresa # Vincula o cliente à empresa logada
+            cliente.save()
+            messages.success(request, f"Cliente {cliente.nome} cadastrado com sucesso!")
+            return redirect('listar_clientes')
+    else:
+        form = ClienteForm()
+
+    return render(request, 'form_cliente.html', {'form': form})

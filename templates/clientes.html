@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+
+{% block title %}Meus Clientes{% endblock %}
+
+{% block head %}
+<style>
+    .container-clientes { max-width: 1000px; margin: 0 auto; }
+    
+    /* Reutilizando estilos de tabela e busca */
+    .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    
+    .btn-novo {
+        background-color: var(--cor-secundaria);
+        color: white;
+        padding: 10px 20px;
+        text-decoration: none;
+        border-radius: 5px;
+        font-weight: bold;
+    }
+
+    .search-box { flex: 1; margin-right: 20px; display: flex; gap: 10px; }
+    .search-input { padding: 10px; border: 1px solid #ccc; border-radius: 5px; width: 100%; max-width: 400px; }
+    
+    table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+    th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #eee; }
+    th { background-color: var(--cor-primaria); color: white; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-clientes">
+    <div class="top-bar">
+        <form method="get" class="search-box">
+            <input type="text" name="q" class="search-input" placeholder="Buscar cliente por nome..." value="{{ termo_busca }}">
+            <button type="submit" class="btn-novo" style="background-color: var(--cor-primaria);">🔍</button>
+        </form>
+        <a href="{% url 'cadastrar_cliente' %}" class="btn-novo">+ Novo Cliente</a>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div style="padding:15px; background:#d4edda; color:#155724; border-radius:5px; margin-bottom:20px;">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    {% if clientes %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Nome / Razão Social</th>
+                    <th>CPF / CNPJ</th>
+                    <th>Telefone</th>
+                    <th>Cidade</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in clientes %}
+                <tr>
+                    <td><strong>{{ c.nome }}</strong></td>
+                    <td>{{ c.cpf_cnpj }}</td>
+                    <td>{{ c.telefone|default:"-" }}</td>
+                    <td>{{ c.cidade }}-{{ c.uf }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div style="text-align: center; padding: 40px; color: #7f8c8d;">
+            <h3>Nenhum cliente encontrado.</h3>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

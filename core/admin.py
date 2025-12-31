@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import User
-from .models import NotaFiscal, Empresa, PerfilUsuario
+from .models import NotaFiscal, Empresa, PerfilUsuario, Cliente
 
 # ==================================================
 # 1. ADMINISTRAÇÃO DE EMPRESAS
@@ -22,6 +22,37 @@ class EmpresaAdmin(admin.ModelAdmin):
             'description': 'Credenciais geradas no painel da Nuvem Fiscal.'
         }),
     )
+    
+@admin.register(Cliente)
+class ClienteAdmin(admin.ModelAdmin):
+    list_display = ('nome', 'cpf_cnpj', 'telefone', 'cidade', 'empresa')
+    list_filter = ('empresa', 'uf')
+    search_fields = ('nome', 'cpf_cnpj', 'email')
+    
+    # 1. BLINDAGEM: Só mostra clientes da empresa do usuário
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        if request.user.is_superuser:
+            return qs
+        try:
+            return qs.filter(empresa=request.user.perfil.empresa)
+        except:
+            return qs.none()
+
+    # 2. AUTOMAÇÃO: Salva a empresa automaticamente ao criar cliente
+    def save_model(self, request, obj, form, change):
+        if not request.user.is_superuser:
+            obj.empresa = request.user.perfil.empresa
+        super().save_model(request, obj, form, change)
+
+    # 3. INTERFACE: Esconde o campo 'empresa' para usuários comuns
+    def get_form(self, request, obj=None, **kwargs):
+        form = super().get_form(request, obj, **kwargs)
+        if not request.user.is_superuser:
+            if 'empresa' in form.base_fields:
+                form.base_fields['empresa'].widget.attrs['disabled'] = True
+                form.base_fields['empresa'].required = False
+        return form
 
 # ==================================================
 # 2. VÍNCULO USUÁRIO -> EMPRESA (INLINE)

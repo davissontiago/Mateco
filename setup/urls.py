@@ -7,7 +7,9 @@ from core.views import (
     listar_notas, 
     buscar_produtos, 
     emitir_nota,   
-    imprimir_nota   
+    imprimir_nota,
+    listar_clientes, 
+    cadastrar_cliente
 )
 
 """
@@ -54,4 +56,8 @@ urlpatterns = [
     
     # Geração e download do PDF da nota fiscal
     path('imprimir-nota/<int:nota_id>/', imprimir_nota, name='imprimir_nota'),
+    
+    # Gestão de Clientes
+    path('clientes/', listar_clientes, name='listar_clientes'),
+    path('clientes/novo/', cadastrar_cliente, name='cadastrar_cliente'),
 ]

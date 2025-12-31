@@ -71,6 +71,36 @@ class Empresa(models.Model):
         verbose_name = "Empresa / Loja"
         verbose_name_plural = "Empresas / Lojas"
 
+class Cliente(models.Model):
+    """
+    Representa o consumidor final ou empresa cliente.
+    Vinculado a uma Empresa (Loja) específica para manter o isolamento dos dados.
+    """
+    empresa = models.ForeignKey(Empresa, on_delete=models.CASCADE, verbose_name="Empresa/Loja")
+    
+    nome = models.CharField(max_length=100, verbose_name="Nome Completo / Razão Social")
+    cpf_cnpj = models.CharField(max_length=20, verbose_name="CPF ou CNPJ", help_text="Apenas números")
+    
+    # Contato (Opcional)
+    email = models.EmailField(blank=True, null=True, verbose_name="E-mail")
+    telefone = models.CharField(max_length=20, blank=True, null=True, verbose_name="Telefone/WhatsApp")
+    
+    # Endereço (Importante para NF-e Grande, Opcional para NFC-e)
+    cep = models.CharField(max_length=9, blank=True, null=True, verbose_name="CEP")
+    endereco = models.CharField(max_length=100, blank=True, null=True, verbose_name="Endereço")
+    numero = models.CharField(max_length=10, blank=True, null=True, verbose_name="Número")
+    bairro = models.CharField(max_length=50, blank=True, null=True, verbose_name="Bairro")
+    cidade = models.CharField(max_length=50, blank=True, null=True, verbose_name="Cidade")
+    uf = models.CharField(max_length=2, blank=True, null=True, verbose_name="UF")
+
+    def __str__(self):
+        return f"{self.nome} ({self.cpf_cnpj})"
+
+    class Meta:
+        verbose_name = "Cliente"
+        verbose_name_plural = "Clientes"
+        # Garante que não tenha CPF duplicado DENTRO DA MESMA EMPRESA
+        unique_together = ('empresa', 'cpf_cnpj')
 
 class NotaFiscal(models.Model):
     """
@@ -95,6 +125,14 @@ class NotaFiscal(models.Model):
     serie = models.IntegerField(default=0, verbose_name="Série")
     chave = models.CharField(
         max_length=50, blank=True, null=True, verbose_name="Chave de Acesso"
+    )
+    
+    cliente = models.ForeignKey(
+        Cliente, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        verbose_name="Cliente (Opcional)"
     )
 
     # ==================================================
