@@ -139,12 +139,20 @@ class Cliente(models.Model):
         max_length=10, blank=True, null=True, verbose_name="Número"
     )
     bairro = models.CharField(
-        max_length=50, blank=True, null=True, verbose_name="Bairro"
+        max_length=50, blank=True, null=True, verbose_name="Bairro" 
     )
     cidade = models.CharField(
         max_length=50, blank=True, null=True, verbose_name="Cidade"
     )
     uf = models.CharField(max_length=2, blank=True, null=True, verbose_name="UF")
+    
+    cod_municipio = models.CharField(
+        max_length=7, 
+        blank=True, 
+        null=True, 
+        verbose_name="Código IBGE",
+        help_text="Código de 7 dígitos. Ex: 2112209 para Timon-MA"
+    )
 
     def __str__(self):
         return f"{self.nome} ({self.cpf_cnpj})"

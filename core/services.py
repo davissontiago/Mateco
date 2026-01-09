@@ -120,6 +120,7 @@ class NuvemFiscalService:
             emitente_data = {
                 "CNPJ": empresa.cnpj,
                 "xNome": empresa.nome,
+                "xFant": empresa.nome_fantasia,
                 "enderEmit": {
                     "xLgr": empresa.logradouro,
                     "nro": empresa.numero,
@@ -156,7 +157,7 @@ class NuvemFiscalService:
                         "xLgr": cliente.endereco,
                         "nro": cliente.numero or "S/N",
                         "xBairro": cliente.bairro or "Centro",
-                        "cMun": empresa.cod_municipio,
+                        "cMun": cliente.cod_municipio or empresa.cod_municipio,
                         "xMun": cliente.cidade,
                         "UF": cliente.uf,
                         "CEP": cliente.cep or "65000000",
