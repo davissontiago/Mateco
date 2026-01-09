@@ -1,99 +1,189 @@
 /* =============================================================
-   MATECO SISTEMAS - ESTILOS GLOBAIS (BASE)
-   Cores da Marca: 
-   - Laranja: #dd5114
-   - Azul: #10295a
-   - Branco: #ffffff
+   MATECO SISTEMAS - ESTILOS GLOBAIS
    ============================================================= */
 
-/* --- 1. CONFIGURAÇÕES GLOBAIS E BODY --- */
+/* --- 1. CONFIGURAÇÕES GLOBAIS --- */
 body {
     margin: 0;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    background-color: #f4f4f9; /* Fundo cinza bem claro para não cansar a vista */
-    
-    /* Configuração Flex para garantir que o rodapé fique sempre embaixo */
+    background-color: #f4f4f9;
     display: flex;
     flex-direction: column;
     min-height: 100vh;
 }
 
-/* --- 2. BARRA DE NAVEGAÇÃO (NAVBAR) --- */
+/* --- 2. BARRA DE NAVEGAÇÃO --- */
 nav {
     background-color: var(--cor-primaria);
-    padding: 1rem;
+    /* padding: 1rem;  <-- REMOVIDO PARA EVITAR ESPAÇO DUPLO */
     color: white;
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    align-items: center;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1); /* Sutil sombra para destacar do fundo */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    position: relative;
+    z-index: 1000;
 }
 
+/* Container flexível que segura a marca e os links */
+.nav-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    
+    /* VOLTANDO AO ORIGINAL: Largura total com padding */
+    width: 100%; 
+    padding: 1rem; /* O padding fica aqui agora */
+    box-sizing: border-box;
+    
+    /* max-width: 1200px; <-- REMOVIDO (Isso causava o espaço no PC) */
+    /* margin: 0 auto;    <-- REMOVIDO (Isso centralizava o menu) */
+}
+
+/* Marca (Logo) */
 .brand {
     font-size: 1.3em;
     font-weight: bold;
-    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
+.badge-teste {
+    background-color: #ffc107; 
+    color: #000; 
+    padding: 2px 6px; 
+    border-radius: 4px; 
+    font-size: 0.6em; 
+    font-weight: bold; 
+    vertical-align: middle;
+}
+
+/* Links Desktop */
 .nav-links {
     display: flex;
     gap: 15px;
+    align-items: center;
 }
 
-.nav-links a {
+.nav-links a,
+.btn-sair {
     color: white;
     text-decoration: none;
     font-weight: 500;
     font-size: 0.95em;
-    transition: 0.2s; /* Suaviza a troca de cor no mouse over */
+    transition: 0.2s;
+    font-family: inherit;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
 }
 
-.nav-links a:hover {
-    color: var(--cor-secundaria); /* Laranja da Marca (Destaque ao passar o mouse) */
+.nav-links a:hover,
+.btn-sair:hover {
+    color: var(--cor-secundaria);
 }
 
-/* --- 3. CONTAINER DE CONTEÚDO --- */
+/* Botão Mobile (Escondido no Desktop) */
+.mobile-btn {
+    display: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+    flex-direction: column;
+    gap: 5px;
+    padding: 5px;
+    /* Ajuste para o botão ficar branco e visível */
+    color: white; 
+}
+
+.mobile-btn span {
+    display: block;
+    width: 25px;
+    height: 3px;
+    background-color: white;
+    border-radius: 2px;
+}
+
+/* --- 3. CONTEÚDO E RODAPÉ --- */
 .container {
-    flex: 1; /* Faz o conteúdo crescer para ocupar o espaço vazio entre nav e footer */
+    flex: 1;
     display: flex;
     justify-content: center;
     align-items: flex-start;
     padding: 15px;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    box-sizing: border-box;
 }
 
-/* --- 4. RODAPÉ (FOOTER) --- */
 footer {
     background-color: #ecf0f1;
     color: #7f8c8d;
     text-align: center;
     padding: 15px;
     font-size: 0.85em;
-    margin-top: auto; /* Garante empurrar o rodapé para o final */
+    margin-top: auto;
     border-top: 1px solid #dee2e6;
 }
 
-/* --- 5. AJUSTES MOBILE (RESPONSIVIDADE) --- */
-@media (max-width: 600px) {
-    nav {
-        flex-direction: column;
-        text-align: center;
-        gap: 15px;
-        padding: 1.5rem 1rem;
+/* --- 4. AJUSTES MOBILE (RESPONSIVIDADE) --- */
+@media (max-width: 768px) {
+    /* Mostra o botão hambúrguer */
+    .mobile-btn {
+        display: flex;
     }
 
-    .nav-links {
-        flex-direction: row;
-        gap: 10px;
-        justify-content: center;
+    /* Faz a marca ocupar toda a largura da barra no celular */
+    .brand {
         width: 100%;
+        justify-content: space-between; /* Texto na Esquerda, Botão na Direita */
     }
 
-    .nav-links a {
-        background: rgba(255, 255, 255, 0.1); /* Fundo translúcido para botões de toque */
-        padding: 8px 12px;
-        border-radius: 6px;
-        flex: 1; /* Distribui os botões igualmente */
-        text-align: center;
+    /* Menu Lateral (Gaveta) */
+    .nav-links {
+        position: fixed;
+        /* A altura do top deve bater com a altura real da navbar. 
+           Como temos padding 1rem (aprox 16px) em cima e baixo + texto, 
+           60px pode precisar de ajuste fino se ficar espaço branco */
+        top: 60px; 
+        right: -100%;
+        width: 250px;
+        height: 100vh;
+        background-color: var(--cor-primaria);
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 10px 0;
+        gap: 0;
+        transition: 0.3s ease-in-out;
+        box-shadow: -2px 0 5px rgba(0, 0, 0, 0.2);
+    }
+
+    .nav-links.active {
+        right: 0;
+    }
+
+    /* Itens dentro do menu mobile */
+    .nav-links a,
+    .nav-links form,
+    .btn-sair {
+        width: 100%;
+        display: block;
+        text-align: left;
+    }
+
+    .nav-links a,
+    .btn-sair {
+        padding: 15px 20px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        font-size: 1.1em;
+    }
+
+    .nav-links form .btn-sair {
+        border-bottom: none;
+    }
+
+    .nav-links a:active,
+    .btn-sair:active {
+        background-color: rgba(255, 255, 255, 0.1);
     }
 }
