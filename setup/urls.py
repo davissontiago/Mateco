@@ -9,7 +9,8 @@ from core.views import (
     emitir_nota,   
     imprimir_nota,
     listar_clientes, 
-    cadastrar_cliente
+    cadastrar_cliente,
+    verificar_status_nota
 )
 
 """
@@ -53,6 +54,9 @@ urlpatterns = [
     
     # Processamento de emissão de NFC-e na Nuvem Fiscal
     path('emitir-nota/', emitir_nota, name='emitir_nota'), 
+    
+    # Verifcar notas:
+    path('verificar_nota/', verificar_status_nota, name='verificar_nota'),
     
     # Geração e download do PDF da nota fiscal
     path('imprimir-nota/<int:nota_id>/', imprimir_nota, name='imprimir_nota'),

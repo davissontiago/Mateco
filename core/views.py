@@ -173,6 +173,35 @@ def emitir_nota(request):
     return JsonResponse({'mensagem': 'Método não permitido'}, status=405)
 
 @login_required
+def verificar_status_nota(request):
+    """
+    View utilitária para verificar se uma nota específica existe na SEFAZ/Nuvem.
+    Pode ser chamada via URL: /verificar_nota/?numero=100&serie=2
+    """
+    empresa = get_empresa_usuario(request)
+    numero = request.GET.get('numero')
+    serie = request.GET.get('serie')
+    
+    if not numero or not serie:
+        return JsonResponse({'erro': 'Informe numero e serie na URL'}, status=400)
+        
+    encontrada, dados = NuvemFiscalService.consultar_nota_por_numero(empresa, numero, serie)
+    
+    if encontrada:
+        status_sefaz = dados.get('status')
+        chave = dados.get('chave')
+        return JsonResponse({
+            'mensagem': 'NOTA ENCONTRADA NA NUVEM FISCAL!',
+            'status': status_sefaz,
+            'chave': chave,
+            'id_nuvem': dados.get('id')
+        })
+    elif dados == "Nota não encontrada":
+        return JsonResponse({'mensagem': 'Nota NÃO existe na Nuvem Fiscal. Pode emitir sem medo.'})
+    else:
+        return JsonResponse({'erro': dados}, status=500)
+
+@login_required
 def listar_clientes(request):
     try:
         empresa = request.user.perfil.empresa
