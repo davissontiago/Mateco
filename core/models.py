@@ -176,6 +176,13 @@ class NotaFiscal(models.Model):
         ('producao', 'Produção (Real)'),
     ]
     
+    PAGAMENTO_CHOICES = [
+        ('01', 'Dinheiro'),
+        ('03', 'Cartão de Crédito'),
+        ('04', 'Cartão de Débito'),
+        ('17', 'PIX'),
+    ]
+    
     empresa = models.ForeignKey(
         Empresa, on_delete=models.CASCADE, verbose_name="Empresa Emitente"
     )
@@ -186,6 +193,13 @@ class NotaFiscal(models.Model):
         null=True,
         blank=True,
         verbose_name="Cliente (Opcional)",
+    )
+    
+    forma_pagamento = models.CharField(
+        max_length=2, 
+        choices=PAGAMENTO_CHOICES, 
+        default='01',
+        verbose_name="Forma de Pagamento"
     )
 
     # ==================================================

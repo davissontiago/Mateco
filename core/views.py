@@ -155,6 +155,7 @@ def emitir_nota(request):
                 nota = NotaFiscal.objects.create(
                     empresa=empresa, 
                     cliente=cliente,
+                    forma_pagamento=forma_pagamento,
                     id_nota=resultado.get('id'),
                     numero=resultado.get('numero', 0),
                     serie=resultado.get('serie', 0),

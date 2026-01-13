@@ -161,6 +161,7 @@
                 <tr>
                     <th>Número</th>
                     <th>Data</th>
+                    <th>Cliente</th>
                     <th>Valor</th>
                     <th>Pagamento</th> <th>Status</th>
                     <th>Ação</th>
@@ -172,13 +173,41 @@
                     <td data-label="Número"><strong>{{ nota.numero }}</strong></td>
                     
                     <td data-label="Data">{{ nota.data_emissao|date:"d/m/Y H:i" }}</td>
+
+                    <td data-label="Cliente">
+                        {% if nota.cliente %}
+                            {{ nota.cliente.nome }}
+                        {% else %}
+                            <span style="color: #999; font-style: italic;">Consumidor Final</span>
+                        {% endif %}
+                    </td>
                     
                     <td data-label="Valor" style="color: {{ empresa_ativa.cor_primaria|default:'#00838f' }}; font-weight: bold;">
                         R$ {{ nota.valor_total }}
                     </td>
 
                     <td data-label="Pagamento">
-                        {{ nota.get_forma_pagamento_display|default:"Dinheiro" }}
+                        {% if nota.forma_pagamento == '01' %}
+                            <span style="background-color: #e8f5e9; color: #2e7d32; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 0.85em; border: 1px solid #2e7d32;">
+                                DINHEIRO
+                            </span>
+                        {% elif nota.forma_pagamento == '17' %}
+                            <span style="background-color: #e3f2fd; color: #1565c0; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 0.85em; border: 1px solid #1565c0;">
+                                PIX
+                            </span>
+                        {% elif nota.forma_pagamento == '04' %}
+                            <span style="background-color: #fffde7; color: #fbc02d; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 0.85em; border: 1px solid #fbc02d;">
+                                DÉBITO
+                            </span>
+                        {% elif nota.forma_pagamento == '03' %}
+                            <span style="background-color: #ffebee; color: #c62828; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 0.85em; border: 1px solid #c62828;">
+                                CRÉDITO
+                            </span>
+                        {% else %}
+                            <span style="background-color: #f5f5f5; color: #616161; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 0.85em; border: 1px solid #616161;">
+                                {{ nota.get_forma_pagamento_display|upper|default:"NÃO INF." }}
+                            </span>
+                        {% endif %}
                     </td>
                     
                     <td data-label="Status">
