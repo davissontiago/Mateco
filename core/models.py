@@ -123,6 +123,14 @@ class Cliente(models.Model):
     cpf_cnpj = models.CharField(
         max_length=20, verbose_name="CPF ou CNPJ", help_text="Apenas números"
     )
+    
+    apelido = models.CharField(
+        max_length=30, 
+        blank=True, 
+        null=True, 
+        verbose_name="Apelido / Nome Curto",
+        help_text="Para simplificar em telas pequenas. Ex: 'João da Silva'"
+    )
 
     # Contato (Opcional)
     email = models.EmailField(blank=True, null=True, verbose_name="E-mail")

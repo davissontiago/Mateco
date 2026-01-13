@@ -4,6 +4,7 @@ from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages  # <--- ADICIONE ESTA LINHA AQUI
+from django.db.models import Sum
 
 # Importações locais do projeto
 from .models import NotaFiscal, Empresa, Cliente
@@ -46,18 +47,58 @@ def emitir(request):
 
     return render(request, 'emitir.html', {'clientes': clientes})
 
+from django.db.models import Q
+
 @login_required
 def listar_notas(request):
     empresa = get_empresa_usuario(request)
-    if not empresa:
-        return render(request, 'notas.html', {'error': 'Usuário sem empresa vinculada.'})
-
+    
+    # Busca clientes para o filtro
+    todos_clientes = Cliente.objects.filter(empresa=empresa).values('id', 'nome', 'apelido', 'cpf_cnpj').order_by('nome')
+    
+    # --- AQUI ESTAVA O ERRO: Adicionamos o filtro de ambiente ---
     notas = NotaFiscal.objects.filter(
         empresa=empresa, 
-        ambiente=empresa.ambiente 
-    ).order_by('-data_emissao')
-    
-    return render(request, 'notas.html', {'notas': notas, 'empresa': empresa})
+        ambiente=empresa.ambiente  # Garante que só apareçam notas do ambiente ativo
+    ).select_related('cliente').order_by('-numero', '-serie')
+
+    # --- LÓGICA DE FILTROS (Mantida igual) ---
+    data_inicio = request.GET.get('data_inicio')
+    data_fim = request.GET.get('data_fim')
+    filtro_clientes_ids = request.GET.getlist('clientes') 
+    filtro_pagamentos = request.GET.getlist('pagamento')
+
+    if data_inicio:
+        notas = notas.filter(data_emissao__date__gte=data_inicio)
+    if data_fim:
+        notas = notas.filter(data_emissao__date__lte=data_fim)
+
+    if filtro_clientes_ids:
+        notas = notas.filter(cliente__id__in=filtro_clientes_ids)
+
+    if filtro_pagamentos:
+        notas = notas.filter(forma_pagamento__in=filtro_pagamentos)
+        
+    totais = notas.aggregate(
+        total_dinheiro=Sum('valor_total', filter=Q(forma_pagamento='01')),
+        total_pix=Sum('valor_total', filter=Q(forma_pagamento='17')),
+        total_debito=Sum('valor_total', filter=Q(forma_pagamento='04')),
+        total_credito=Sum('valor_total', filter=Q(forma_pagamento='03')),
+        total_geral=Sum('valor_total')
+    )
+
+    context = {
+        'notas': notas,
+        'todos_clientes': todos_clientes,
+        'filtros': {
+            'data_inicio': data_inicio,
+            'data_fim': data_fim,
+            'clientes': [int(x) for x in filtro_clientes_ids if x.isdigit()],
+            'pagamento': filtro_pagamentos
+        },
+        'totais': totais,
+    }
+    return render(request, 'notas.html', context)
 
 # ==================================================
 # 2. VIEWS DE API (SERVIÇOS PARA O FRONTEND)
