@@ -4,7 +4,7 @@
 
 {% block head %}
 <style>
-    /* Container centralizado para a listagem */
+    /* Container centralizado */
     .container-notas { 
         max-width: 800px; 
         margin: 0 auto; 
@@ -12,12 +12,12 @@
     }
 
     h1 { 
-        color: {{ empresa_ativa.cor_primaria|default:'#00838f' }}; /* Azul da Marca */
+        color: {{ empresa_ativa.cor_primaria|default:'#00838f' }}; 
         text-align: center; 
         margin-bottom: 30px; 
     }
 
-    /* Estilização da Tabela de Notas */
+    /* --- ESTILO PADRÃO DA TABELA (DESKTOP) --- */
     table { 
         width: 100%; 
         border-collapse: collapse; 
@@ -33,7 +33,6 @@
         border-bottom: 1px solid #eee; 
     }
 
-    /* Cabeçalho com a cor Azul da Marca */
     th { 
         background-color: {{ empresa_ativa.cor_primaria|default:'#00838f' }}; 
         color: white; 
@@ -56,8 +55,13 @@
         background-color: #d4edda; 
         color: #155724; 
     }
+    
+    .status.cancelada {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
 
-    /* Botão de Visualização (Laranja da Marca) */
+    /* Botão de Visualização */
     .btn-ver { 
         background-color: {{ empresa_ativa.cor_secundaria|default:'#546e7a' }}; 
         color: white; 
@@ -67,13 +71,13 @@
         font-size: 0.9em; 
         font-weight: bold; 
         transition: background 0.3s;
+        display: inline-block; /* Garante que padding funcione bem */
     }
 
     .btn-ver:hover { 
         background-color: #b03e0e; 
     }
 
-    /* Estado vazio: quando não há notas no banco */
     .empty-state { 
         text-align: center; 
         padding: 40px; 
@@ -81,6 +85,68 @@
         background: white;
         border-radius: 10px;
         box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    }
+
+    /* --- OTIMIZAÇÃO PARA CELULAR (CARD VIEW) --- */
+    @media (max-width: 768px) {
+        /* Esconde o cabeçalho da tabela pois os labels estarão dentro dos cards */
+        thead {
+            display: none;
+        }
+
+        table, tbody, th, td, tr {
+            display: block; /* Transforma elementos de tabela em blocos */
+        }
+
+        /* O estilo do "Card" (cada linha vira um cartão) */
+        tr {
+            margin-bottom: 20px;
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        /* Estilo das células dentro do card */
+        td {
+            padding: 12px 15px;
+            text-align: right; /* Conteúdo alinhado à direita */
+            border-bottom: 1px solid #f0f0f0;
+            position: relative;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* A "mágica": insere o título da coluna antes do conteúdo */
+        td::before {
+            content: attr(data-label); /* Pega o valor do atributo data-label */
+            font-weight: bold;
+            color: #555;
+            text-transform: uppercase;
+            font-size: 0.8em;
+            text-align: left;
+        }
+
+        /* Remove a borda do último item (botão) */
+        td:last-child {
+            border-bottom: none;
+            justify-content: center; /* Centraliza o botão */
+            padding-top: 15px;
+            padding-bottom: 15px;
+        }
+        
+        /* Esconde o label do botão para ele ficar centralizado limpo */
+        td:last-child::before {
+            display: none;
+        }
+
+        /* Ajuste do botão para ocupar largura total no mobile se quiser */
+        .btn-ver {
+            width: 100%;
+            text-align: center;
+            box-sizing: border-box;
+        }
     }
 </style>
 {% endblock %}
@@ -96,27 +162,38 @@
                     <th>Número</th>
                     <th>Data</th>
                     <th>Valor</th>
-                    <th>Status</th>
+                    <th>Pagamento</th> <th>Status</th>
                     <th>Ação</th>
                 </tr>
             </thead>
             <tbody>
                 {% for nota in notas %}
                 <tr>
-                    <td><strong>{{ nota.numero }}</strong></td>
+                    <td data-label="Número"><strong>{{ nota.numero }}</strong></td>
                     
-                    <td>{{ nota.data_emissao|date:"d/m/Y H:i" }}</td>
+                    <td data-label="Data">{{ nota.data_emissao|date:"d/m/Y H:i" }}</td>
                     
-                    <td style="color: {{ empresa_ativa.cor_primaria|default:'#00838f' }}; font-weight: bold;">
+                    <td data-label="Valor" style="color: {{ empresa_ativa.cor_primaria|default:'#00838f' }}; font-weight: bold;">
                         R$ {{ nota.valor_total }}
                     </td>
+
+                    <td data-label="Pagamento">
+                        {{ nota.get_forma_pagamento_display|default:"Dinheiro" }}
+                    </td>
                     
-                    <td><span class="status">{{ nota.status }}</span></td>
+                    <td data-label="Status">
+                        <span class="status {% if nota.status == 'CANCELADA' %}cancelada{% endif %}">
+                            {{ nota.status }}
+                        </span>
+                    </td>
                     
-                    <td>
+                    <td data-label="Ação">
                         <a href="{% url 'imprimir_nota' nota.id %}" target="_blank" class="btn-ver">
-                            📄 Ver PDF
+                            📄 PDF
                         </a>
+                        
+                        {% if nota.status != 'CANCELADA' %}
+                            {% endif %}
                     </td>
                 </tr>
                 {% endfor %}
