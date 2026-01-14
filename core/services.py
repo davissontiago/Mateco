@@ -1,7 +1,22 @@
 import requests
 import json
 from datetime import datetime
-from .models import NotaFiscal
+from .models import NotaFiscal, PerfilUsuario
+
+def get_empresa_usuario(request):
+    """
+    Recupera a empresa vinculada ao usuário logado.
+    Retorna None se o usuário não estiver logado ou não tiver perfil.
+    """
+    if not request.user.is_authenticated:
+        return None
+        
+    try:
+        # Tenta acessar o perfil e a empresa vinculada
+        return request.user.perfil.empresa
+    except (AttributeError, PerfilUsuario.DoesNotExist):
+        # Se o usuário não tiver perfil criado, retorna None
+        return None
 
 class NuvemFiscalService:
     """

@@ -4,64 +4,149 @@
 
 {% block head %}
 <style>
-    .container-produtos { max-width: 900px; margin: 0 auto; }
-    
-    /* Barra de Busca */
-    .search-box {
-        display: flex;
-        gap: 10px;
-        margin-bottom: 20px;
-        background: white;
-        padding: 15px;
-        border-radius: 8px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-    }
-    .search-input {
-        flex: 1;
-        padding: 10px;
-        border: 2px solid #eee;
-        border-radius: 5px;
-        font-size: 1rem;
-    }
-    .btn-buscar {
-        background-color: {{ empresa_ativa.cor_primaria|default:'#00838f' }};
-        color: white;
-        border: none;
-        padding: 0 20px;
-        border-radius: 5px;
-        cursor: pointer;
-        font-weight: bold;
-    }
+    .container-produtos { max-width: 900px; margin: 0 auto; width: 100%; box-sizing: border-box; padding-bottom: 50px; }
 
-    /* Tabela */
-    table { 
-        width: 100%; 
-        border-collapse: collapse; 
-        background: white; 
-        border-radius: 8px; 
-        overflow: hidden; 
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
-    }
-    th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #eee; }
+    /* Cabeçalho */
+    .header-container { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
+    .header-container h1 { margin: 0; color: {{ empresa_ativa.cor_primaria|default:'#00838f' }}; }
+    .btn-novo { background-color: #27ae60; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-flex; align-items: center; gap: 5px; border: none; }
+    .btn-novo:hover { background-color: #219150; }
+    
+    /* Busca */
+    .search-box { display: flex; gap: 10px; margin-bottom: 20px; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); align-items: center; flex-wrap: wrap; }
+    .search-input { flex: 2; padding: 10px; border: 1px solid #ccc; border-radius: 5px; height: 40px; box-sizing: border-box; min-width: 200px; }
+    .filter-select { flex: 1; padding: 0 10px; border: 1px solid #ccc; border-radius: 5px; height: 40px; box-sizing: border-box; min-width: 150px; background-color: white; }
+    .btn-buscar { background-color: {{ empresa_ativa.cor_primaria|default:'#00838f' }}; color: white; border: none; padding: 0 20px; border-radius: 5px; cursor: pointer; font-weight: bold; height: 40px; }
+    .btn-limpar { color: #666; text-decoration: none; padding: 0 10px; font-weight: bold; font-size: 0.9em; }
+
+    /* Tabela Desktop */
+    table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+    th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #eee; vertical-align: middle; }
     th { background-color: {{ empresa_ativa.cor_primaria|default:'#00838f' }}; color: white; font-size: 0.9em; text-transform: uppercase; }
     tr:hover { background-color: #f8f9fa; }
 
-    /* Destaques */
-    .preco { color: #27ae60; font-weight: bold; }
-    .estoque-baixo { color: #c0392b; font-weight: bold; }
-    .estoque-ok { color: #2980b9; }
+    /* Status */
+    .preco { color: #27ae60; font-weight: bold; white-space: nowrap; }
+    .estoque-baixo { color: #e67e22; font-weight: bold; background: #fdf2e9; padding: 2px 6px; border-radius: 4px; font-size: 0.9em; }
+    .estoque-zerado { color: #c0392b; font-weight: bold; background: #fadbd8; padding: 2px 6px; border-radius: 4px; font-size: 0.9em; }
+    .estoque-ok { color: #2980b9; background: #ebf5fb; padding: 2px 6px; border-radius: 4px; font-size: 0.9em; font-weight: bold; }
+
+    /* Ações */
+    /* --- AÇÕES (CORREÇÃO DE TAMANHO) --- */
+    .acoes-container { 
+        display: flex; 
+        gap: 8px; 
+        width: 100%; /* O container ocupa tudo */
+    }
+
+    /* Força tanto o Link quanto o Formulário a dividirem o espaço igualmente */
+    .acoes-container > a, 
+    .acoes-container > form {
+        flex: 1;
+        display: flex; /* Garante que o filho preencha a altura */
+    }
+
+    .btn-acao { 
+        flex: 1; /* O botão estica para preencher o pai */
+        padding: 8px 8px; /* Padding vertical igual */
+        border-radius: 4px; 
+        text-decoration: none; 
+        font-weight: bold; 
+        font-size: 0.9em; 
+        border: none; /* Remove borda padrão do button */
+        cursor: pointer; 
+        color: white; 
+        
+        /* Centraliza o texto/ícone perfeitamente */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        
+        /* Garante que padding não aumente o tamanho total */
+        box-sizing: border-box; 
+        line-height: 1.2; /* Normaliza a altura da linha */
+        height: 36px; /* Altura fixa para garantir igualdade */
+    }
+
+    .btn-editar { background-color: #f39c12; }
+    .btn-excluir { background-color: #e74c3c; }
+
+    /* --- MOBILE --- */
+    @media (max-width: 768px) {
+        .header-container { justify-content: center; text-align: center; }
+        .btn-novo { width: 100%; justify-content: center; }
+        .search-box { flex-direction: column; align-items: stretch; }
+        .search-input, .filter-select, .btn-buscar { width: 100%; flex: auto; }
+        
+        thead { display: none; }
+        table, tbody, th, td, tr { display: block; }
+        
+        tr { 
+            margin-bottom: 15px; 
+            border: 1px solid #e0e0e0; 
+            border-radius: 8px; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05); 
+            background: white; 
+        }
+        
+        td { 
+            padding: 12px 15px; 
+            text-align: right; 
+            border-bottom: 1px solid #f0f0f0; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+        }
+        
+        td::before { 
+            content: attr(data-label); 
+            font-weight: bold; 
+            color: #555; 
+            text-transform: uppercase; 
+            font-size: 0.75em; 
+            text-align: left; 
+        }
+        
+        td:last-child { 
+            border-bottom: none; 
+            justify-content: center; 
+            padding: 15px; 
+        }
+        
+        /* No mobile, mantemos a lógica do container flexível */
+        .acoes-container { width: 100%; }
+        .btn-acao { width: 100%; margin: 0px 0px 0px 10px;  padding: 1px 1px;}
+    }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="container-produtos">
-    <h1 style="color: {{ empresa_ativa.cor_primaria|default:'#00838f' }}; text-align: center; margin-bottom: 20px;">Catálogo de Produtos</h1>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div style="padding:15px; background:#d4edda; color:#155724; border-radius:5px; margin-bottom:20px;">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+    
+    <div class="header-container">
+        <h1>Catálogo de Produtos</h1>
+        <a href="{% url 'criar_produto' %}" class="btn-novo">+ Novo Produto</a>
+    </div>
 
     <form method="get" class="search-box">
-        <input type="text" name="q" class="search-input" placeholder="Buscar por nome..." value="{{ termo_busca }}">
+        <input type="text" name="q" class="search-input" placeholder="Buscar por nome ou código..." value="{{ termo_busca|default:'' }}">
+        <select name="filtro_estoque" class="filter-select">
+            <option value="">Todos os Estoques</option>
+            <option value="positivo" {% if filtro_estoque == 'positivo' %}selected{% endif %}>Com Estoque (> 0)</option>
+            <option value="baixo" {% if filtro_estoque == 'baixo' %}selected{% endif %}>Estoque Baixo (1-5)</option>
+            <option value="zerado" {% if filtro_estoque == 'zerado' %}selected{% endif %}>Sem Estoque (0)</option>
+        </select>
         <button type="submit" class="btn-buscar">🔍 Buscar</button>
-        {% if termo_busca %}
-            <a href="{% url 'listar_produtos' %}" style="display:flex; align-items:center; color: #666; text-decoration:none; padding-left:10px;">Limpar</a>
+        {% if termo_busca or filtro_estoque %}
+            <a href="{% url 'listar_produtos' %}" class="btn-limpar">Limpar</a>
         {% endif %}
     </form>
 
@@ -74,36 +159,48 @@
                     <th>NCM</th>
                     <th>Preço</th>
                     <th>Estoque</th>
-                    
+                    <th style="text-align: center;">Ações</th>
                 </tr>
             </thead>
             <tbody>
                 {% for prod in produtos %}
                 <tr>
-                    <td style="color: #7f8c8d; font-size: 0.9em;">{{ prod.codigo }}</td>
-                    <td><strong>{{ prod.nome }}</strong></td>
-                    <td>{{ prod.ncm }}</td>
-                    <td class="preco">R$ {{ prod.preco }}</td>
-                    <td>
-                        {% if prod.estoque_atual <= 5 %}
-                            <span class="estoque-baixo">⚠️ {{ prod.estoque_atual }}</span>
+                    <td data-label="Cód.">{{ prod.codigo }}</td>
+                    <td data-label="Descrição"><strong>{{ prod.nome }}</strong></td>
+                    <td data-label="NCM">{{ prod.ncm }}</td>
+                    <td data-label="Preço" class="preco">R$ {{ prod.preco }}</td>
+                    <td data-label="Estoque">
+                        {% if prod.estoque_atual <= 5 and prod.estoque_atual > 0 %}
+                            <span class="estoque-baixo"> {{ prod.estoque_atual }}</span>
+                        {% elif prod.estoque_atual <= 0 %}
+                            <span class="estoque-zerado"> {{ prod.estoque_atual }}</span>
                         {% else %}
                             <span class="estoque-ok">{{ prod.estoque_atual }}</span>
                         {% endif %}
+                    </td>
+                    <td data-label="Ações">
+                        <div class="acoes-container">
+                            <a href="{% url 'editar_produto' prod.id %}" class="btn-acao btn-editar">Editar</a>
+                            <form action="{% url 'deletar_produto' prod.id %}" method="POST" style="display:inline; flex: 1;" onsubmit="return confirm('Tem certeza que deseja excluir {{ prod.nome }}?');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn-acao btn-excluir" style="width: 100%;">Excluir</button>
+                            </form>
+                        </div>
                     </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
         
-        <div style="text-align: center; margin-top: 15px; color: #666; font-size: 0.9em;">
-            Total de {{ produtos.count }} produtos encontrados.
+        <div style="text-align: center; margin-top: 20px; color: #666; font-size: 0.9em;">
+            Exibindo {{ produtos.count }} produtos.
         </div>
-
     {% else %}
-        <div style="text-align: center; padding: 40px; color: #7f8c8d;">
+        <div style="text-align: center; padding: 40px; color: #7f8c8d; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
             <h3>Nenhum produto encontrado.</h3>
-            <p>Verifique o termo de busca ou importe seu estoque.</p>
+            <p>Tente mudar os filtros ou adicione novos itens.</p>
+            <br>
+            <a href="{% url 'listar_produtos' %}" class="btn-buscar" style="display:inline-block; width:auto; text-decoration: none;">Ver Todos</a>
         </div>
     {% endif %}
 </div>

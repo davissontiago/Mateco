@@ -4,42 +4,168 @@
 
 {% block head %}
 <style>
-    .container-clientes { max-width: 1000px; margin: 0 auto; }
+    .container-clientes { max-width: 1000px; margin: 0 auto; width: 100%; box-sizing: border-box; padding-bottom: 50px; }
     
-    /* Reutilizando estilos de tabela e busca */
-    .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    /* --- TOPO E BUSCA --- */
+    .top-bar { 
+        display: flex; 
+        justify-content: space-between; 
+        align-items: center; 
+        margin-bottom: 20px; 
+        gap: 15px;
+        flex-wrap: wrap; 
+    }
     
-    .btn-novo {
-        background-color: var(--cor-secundaria);
+    .search-box { 
+        flex: 1; 
+        display: flex; 
+        gap: 10px; 
+        min-width: 250px; 
+    }
+    
+    .search-input { 
+        flex: 1;
+        padding: 10px; 
+        border: 1px solid #ccc; 
+        border-radius: 5px; 
+        height: 40px; 
+        box-sizing: border-box;
+    }
+    
+    .btn-buscar {
+        background-color: {{ empresa_ativa.cor_primaria|default:'#00838f' }};
         color: white;
-        padding: 10px 20px;
+        border: none;
+        padding: 0 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: bold;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .btn-novo {
+        background-color: #27ae60; 
+        color: white;
+        padding: 0 20px;
         text-decoration: none;
         border-radius: 5px;
         font-weight: bold;
+        height: 40px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        white-space: nowrap;
+        transition: background 0.3s;
     }
+    .btn-novo:hover { background-color: #219150; }
 
-    .search-box { flex: 1; margin-right: 20px; display: flex; gap: 10px; }
-    .search-input { padding: 10px; border: 1px solid #ccc; border-radius: 5px; width: 100%; max-width: 400px; }
-    
-    table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-    th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #eee; }
-    th { background-color: var(--cor-primaria); color: white; }
+    /* --- TABELA DESKTOP --- */
+    table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+    th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #eee; vertical-align: middle; }
+    th { background-color: {{ empresa_ativa.cor_primaria|default:'#00838f' }}; color: white; font-size: 0.9em; text-transform: uppercase; }
+    tr:hover { background-color: #f8f9fa; }
+
+    /* Botão de Ação (Editar) */
+    .btn-editar {
+        background-color: #f39c12;
+        color: white;
+        padding: 6px 12px;
+        border-radius: 4px;
+        text-decoration: none;
+        font-size: 0.9em;
+        font-weight: bold;
+        display: inline-block;
+        transition: opacity 0.3s;
+        /* Garante tamanho controlado */
+        min-width: 80px;
+        text-align: center;
+    }
+    .btn-editar:hover { opacity: 0.8; }
+
+    /* --- MOBILE (RESPONSIVO) --- */
+    /* --- MOBILE (RESPONSIVO) --- */
+    @media (max-width: 768px) {
+        /* Ajuste do Topo */
+        .top-bar { flex-direction: column; align-items: stretch; }
+        .search-box { width: 100%; }
+        
+        /* Botão Novo: Tamanho automático e centralizado */
+        .btn-novo { 
+            width: auto; 
+            align-self: center; 
+            padding: 0 40px;
+        }
+
+        /* Tabela vira Card */
+        thead { display: none; }
+        table, tbody, th, td, tr { display: block; }
+        
+        tr { 
+            margin-bottom: 15px; 
+            border: 1px solid #e0e0e0; 
+            border-radius: 8px; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05); 
+            background: white; 
+        }
+        
+        td { 
+            padding: 12px 15px; 
+            text-align: right; 
+            border-bottom: 1px solid #f0f0f0; 
+            display: flex; 
+            justify-content: space-between; /* <--- ISSO GARANTE A SEPARAÇÃO */
+            align-items: center; 
+        }
+        
+        /* Labels (Nome, CPF, etc) */
+        td::before { 
+            content: attr(data-label); 
+            font-weight: bold; 
+            color: #555; 
+            text-transform: uppercase; 
+            font-size: 0.75em; 
+            text-align: left; 
+        }
+        
+        /* Ajuste específico para a última linha (Ações) */
+        td:last-child { 
+            border-bottom: none; 
+            /* justify-content: space-between; -> Já herdou do 'td' acima */
+            padding: 15px; 
+        }
+
+        /* Botão Editar */
+        .btn-editar { 
+            width: auto; 
+            padding: 8px 25px; 
+            font-size: 1rem; 
+            margin-left: auto; /* Garante que fique na direita caso sobre espaço */
+        }
+    }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="container-clientes">
+    <h1 style="color: {{ empresa_ativa.cor_primaria|default:'#00838f' }}; text-align: center; margin-bottom: 20px;">Meus Clientes</h1>
+
     <div class="top-bar">
         <form method="get" class="search-box">
-            <input type="text" name="q" class="search-input" placeholder="Buscar cliente por nome..." value="{{ termo_busca }}">
-            <button type="submit" class="btn-novo" style="background-color: var(--cor-primaria);">🔍</button>
+            <input type="text" name="q" class="search-input" placeholder="Buscar cliente por nome ou documento..." value="{{ termo_busca }}">
+            <button type="submit" class="btn-buscar">🔍</button>
+            {% if termo_busca %}
+                <a href="{% url 'listar_clientes' %}" style="display:flex; align-items:center; color:#666; text-decoration:none; font-weight:bold; font-size:0.9em;">Limpar</a>
+            {% endif %}
         </form>
         <a href="{% url 'cadastrar_cliente' %}" class="btn-novo">+ Novo Cliente</a>
     </div>
 
     {% if messages %}
         {% for message in messages %}
-            <div style="padding:15px; background:#d4edda; color:#155724; border-radius:5px; margin-bottom:20px;">
+            <div style="padding:15px; background:#d4edda; color:#155724; border: 1px solid #c3e6cb; border-radius:5px; margin-bottom:20px;">
                 {{ message }}
             </div>
         {% endfor %}
@@ -53,25 +179,42 @@
                     <th>CPF / CNPJ</th>
                     <th>Telefone</th>
                     <th>Cidade</th>
-                    <th style="width: 80px; text-align: center;">Ações</th> </tr>
+                    <th style="width: 100px; text-align: center;">Ações</th>
                 </tr>
             </thead>
             <tbody>
                 {% for c in clientes %}
                 <tr>
-                    <td><strong>{{ c.nome }}</strong></td>
-                    <td>{{ c.cpf_cnpj }}</td>
-                    <td>{{ c.telefone|default:"-" }}</td>
-                    <td>{{ c.cidade }}-{{ c.uf }}</td>
-                    <td style="text-align: center;">
-                        <a href="{% url 'editar_cliente' c.id %}" style="text-decoration: none; font-size: 1.2em;" title="Editar">✏️</a>
+                    <td data-label="Nome"><strong>{{ c.nome }}</strong></td>
+                    
+                    <td data-label="Documento">{{ c.cpf_cnpj }}</td>
+                    
+                    <td data-label="Telefone">{{ c.telefone|default:"-" }}</td>
+                    
+                    <td data-label="Cidade">
+                        {% if c.cidade %}
+                            {{ c.cidade }}-{{ c.uf }}
+                        {% else %}
+                            <span style="color: #999; font-style: italic;">Não informado</span>
+                        {% endif %}
+                    </td>
+                    
+                    <td data-label="Ações" style="text-align: center;">
+                        <a href="{% url 'editar_cliente' c.id %}" class="btn-editar">Editar</a>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
+        
+        <div style="text-align: center; margin-top: 15px; color: #666; font-size: 0.9em;">
+            Total de {{ clientes.count }} clientes encontrados.
+        </div>
+
     {% else %}
-        <div style="text-align: center; padding: 40px; color: #7f8c8d;">
+        <div style="text-align: center; padding: 40px; color: #7f8c8d; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
             <h3>Nenhum cliente encontrado.</h3>
+            <p>Cadastre novos clientes ou ajuste sua busca.</p>
         </div>
     {% endif %}
 </div>
