@@ -1,5 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
+from django.views.generic import ListView
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Q
@@ -12,38 +14,42 @@ from core.utils import simular_carrinho_inteligente
 # 1. VIEWS DE PÁGINA (HTML) - Catálogo e CRUD
 # ==================================================
 
-@login_required
-def listar_produtos(request):
-    """
-    Exibe a lista de produtos com filtros de busca e estoque.
-    """
-    empresa = get_empresa_usuario(request)
-    produtos = Produto.objects.filter(empresa=empresa).order_by('nome')
+class ProdutoListView(LoginRequiredMixin, ListView):
+    model = Produto
+    template_name = 'produtos.html'
+    context_object_name = 'produtos'
 
-    # Filtro de Texto
-    termo_busca = request.GET.get('q')
-    if termo_busca:
-        produtos = produtos.filter(
-            Q(nome__icontains=termo_busca) |
-            Q(codigo__icontains=termo_busca) |
-            Q(ncm__icontains=termo_busca)
-        )
+    def get_queryset(self):
+        # Passo A: Filtro base (Segurança)
+        empresa = get_empresa_usuario(self.request)
+        queryset = Produto.objects.filter(empresa=empresa).order_by('nome')
 
-    # Filtro de Estoque
-    filtro_estoque = request.GET.get('filtro_estoque')
-    if filtro_estoque == 'positivo':
-        produtos = produtos.filter(estoque_atual__gt=0)
-    elif filtro_estoque == 'zerado':
-        produtos = produtos.filter(estoque_atual__lte=0)
-    elif filtro_estoque == 'baixo':
-        produtos = produtos.filter(estoque_atual__lte=5, estoque_atual__gt=0)
+        # Passo B: Filtro de Texto da URL (Query parameters)
+        termo_busca = self.request.GET.get('q')
+        if termo_busca:
+            queryset = queryset.filter(
+                Q(nome__icontains=termo_busca) |
+                Q(codigo__icontains=termo_busca) |
+                Q(ncm__icontains=termo_busca)
+            )
 
-    context = {
-        'produtos': produtos,
-        'termo_busca': termo_busca,
-        'filtro_estoque': filtro_estoque
-    }
-    return render(request, 'produtos.html', context)
+        # Passo C: Filtro de Estoque da URL
+        filtro_estoque = self.request.GET.get('filtro_estoque')
+        if filtro_estoque == 'positivo':
+            queryset = queryset.filter(estoque_atual__gt=0)
+        elif filtro_estoque == 'zerado':
+            queryset = queryset.filter(estoque_atual__lte=0)
+        elif filtro_estoque == 'baixo':
+            queryset = queryset.filter(estoque_atual__lte=5, estoque_atual__gt=0)
+
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        # Mantém as variáveis na tela para a barra de pesquisa não ficar em branco
+        context = super().get_context_data(**kwargs)
+        context['termo_busca'] = self.request.GET.get('q', '')
+        context['filtro_estoque'] = self.request.GET.get('filtro_estoque', '')
+        return context
 
 @login_required
 def criar_produto(request):

@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.urls import path, include
-from estoque.views import listar_produtos, buscar_produtos, criar_produto, editar_produto, deletar_produto
+from estoque.views import ProdutoListView, buscar_produtos, criar_produto, editar_produto, deletar_produto
 from core.views import (
     home, 
     emitir, 
@@ -44,7 +44,7 @@ urlpatterns = [
     path('notas/', listar_notas, name='listar_notas'),
     
     # Estoque (Nova Rota)
-    path('produtos/', listar_produtos, name='listar_produtos'),
+    path('produtos/', ProdutoListView.as_view(), name='listar_produtos'),
     path('produto/novo/', criar_produto, name='criar_produto'),
     path('produto/editar/<int:id>/', editar_produto, name='editar_produto'),
     path('produto/deletar/<int:id>/', deletar_produto, name='deletar_produto'),
