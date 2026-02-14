@@ -14,3 +14,7 @@ media/
 
 # Dados
 *.csv
+
+#backups
+backup_mateco.json
+backup.json
