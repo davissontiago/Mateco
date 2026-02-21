@@ -4,7 +4,7 @@ from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages  # <--- ADICIONE ESTA LINHA AQUI
-from django.db.models import Sum
+from django.db.models import Sum, Q
 
 # Importações locais do projeto
 from .models import NotaFiscal, Empresa, Cliente
@@ -47,7 +47,13 @@ def emitir(request):
 
     return render(request, 'emitir.html', {'clientes': clientes})
 
-from django.db.models import Q
+@login_required
+def emitir_nota_automatica(request):
+    """
+    Renderiza a tela exclusiva para emissão automática (Carrinho Inteligente).
+    Como é sempre Consumidor Final, não buscamos clientes.
+    """
+    return render(request, 'emitir_auto.html')
 
 @login_required
 def listar_notas(request):
@@ -79,6 +85,7 @@ def listar_notas(request):
     if filtro_pagamentos:
         notas = notas.filter(forma_pagamento__in=filtro_pagamentos)
         
+    # ... código anterior ...
     totais = notas.aggregate(
         total_dinheiro=Sum('valor_total', filter=Q(forma_pagamento='01')),
         total_pix=Sum('valor_total', filter=Q(forma_pagamento='17')),
@@ -86,6 +93,15 @@ def listar_notas(request):
         total_credito=Sum('valor_total', filter=Q(forma_pagamento='03')),
         total_geral=Sum('valor_total')
     )
+
+    # --- NOVO: Cálculo seguro das percentagens ---
+    total_geral = totais['total_geral'] or 0
+    percentuais = {
+        'dinheiro': ((totais['total_dinheiro'] or 0) / total_geral * 100) if total_geral > 0 else 0,
+        'pix': ((totais['total_pix'] or 0) / total_geral * 100) if total_geral > 0 else 0,
+        'debito': ((totais['total_debito'] or 0) / total_geral * 100) if total_geral > 0 else 0,
+        'credito': ((totais['total_credito'] or 0) / total_geral * 100) if total_geral > 0 else 0,
+    }
 
     context = {
         'notas': notas,
@@ -97,6 +113,7 @@ def listar_notas(request):
             'pagamento': filtro_pagamentos
         },
         'totais': totais,
+        'percentuais': percentuais, # <--- Envia os percentuais para o HTML
     }
     return render(request, 'notas.html', context)
 

@@ -1,17 +1,7 @@
 from django.contrib import admin
 from django.urls import path, include
 from estoque.views import ProdutoListView, buscar_produtos, criar_produto, editar_produto, deletar_produto
-from core.views import (
-    home, 
-    emitir, 
-    listar_notas, 
-    buscar_produtos, 
-    emitir_nota,   
-    imprimir_nota,
-    listar_clientes, 
-    cadastrar_cliente,
-    verificar_status_nota
-)
+from core.views import *
 
 """
 Configuração de URLs do Projeto Mateco.
@@ -39,6 +29,8 @@ urlpatterns = [
     
     # Tela de emissão de notas (PDV)
     path('emitir/', emitir, name='emitir'),
+    path('emitir-auto/', emitir_nota_automatica, name='emitir_auto'),
+
     
     # Histórico e listagem de notas fiscais
     path('notas/', listar_notas, name='listar_notas'),

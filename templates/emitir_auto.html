@@ -1,0 +1,146 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Frente de Caixa - Lote Automático{% endblock %}
+
+{% block head %}
+  <link rel="stylesheet" href="{% static 'css/emitir.css' %}" />
+  <style>
+    /* --- NAVEGAÇÃO SUPERIOR (Bolinhas e Controles) --- */
+    .navegacao-lote { display: flex; align-items: center; justify-content: space-between; background: #f8f9fa; padding: 10px; border-bottom: 1px solid #eee; border-radius: 8px 8px 0 0; }
+    .btn-nav:hover:not(:disabled) { background: #eee; }
+    .btn-nav:disabled { opacity: 0.5; cursor: not-allowed; }
+    
+    .bolinhas-wrapper { flex: 1; display: flex; gap: 8px; flex-wrap: wrap; padding: 5px; }
+    .bolinha { width: 28px; height: 28px; border-radius: 50%; background: #ddd; color: #555; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.8em; cursor: pointer; border: 2px solid transparent; transition: 0.3s; flex-shrink: 0; }
+    .bolinha:hover { opacity: 0.8; }
+    .bolinha.ativa { border-color: #2980b9; transform: scale(1.1); box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+
+    /* Cores de Status das Bolinhas */
+    .bolinha.pendente { background: #bdc3c7; color: white; }
+    .bolinha.emitindo { background: #f39c12; color: white; animation: piscar 1s infinite alternate; }
+    .bolinha.sucesso { background: #27ae60; color: white; }
+    .bolinha.erro { background: #e74c3c; color: white; }
+    
+    .btn-hamburger { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #555; padding: 0 10px; }
+    .btn-hamburger:hover { color: #000; }
+
+    /* --- ÁREA DE CONTEÚDO (Lista vs Detalhe) --- */
+    .area-conteudo { padding: 15px; } /* REMOVIDO o max-height e overflow daqui! */
+    
+    /* Lista (Visualização Padrão) */
+    .lote-lista { display: flex; flex-direction: column; gap: 10px; }
+    .lote-item { display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 12px 15px; border-radius: 6px; border: 1px solid #eee; border-left: 4px solid #ccc; cursor: pointer; transition: 0.2s; }
+    .lote-item:hover { background: #f4f6f8; }
+    .lote-item.sucesso { border-left-color: #27ae60; background: #eefaf2; }
+    .lote-item.erro { border-left-color: #e74c3c; background: #fdf2f1; }
+    .lote-info { display: flex; flex-direction: column; }
+    .lote-status { font-size: 0.85em; font-weight: bold; padding: 3px 8px; border-radius: 12px; background: #ddd; color: #555; }
+    .status-sucesso { background: #27ae60; color: white; }
+    .status-erro { background: #e74c3c; color: white; }
+    .status-emitindo { background: #f39c12; color: white; }
+
+    /* Detalhe da Nota (Tabela de Produtos) */
+    .nota-detalhe-header { text-align: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px dashed #ccc; }
+    table.tabela-itens { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    table.tabela-itens th, table.tabela-itens td { padding: 8px; text-align: left; border-bottom: 1px solid #eee; font-size: 0.9em; }
+    table.tabela-itens th { background: #f4f6f8; color: #555; }
+
+    @keyframes piscar { from { opacity: 1; } to { opacity: 0.5; } }
+    .hidden { display: none !important; }
+  </style>
+{% endblock %}
+
+{% block content %}
+  <div class="container-pdv">
+    <h1 style="color: {{ empresa_ativa.cor_primaria|default:'#00838f' }};">Emissão em Lote Automática ⚡</h1>
+
+    <div id="painel-valor" class="area-busca" style="padding: 20px;">
+      <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+        <div style="flex: 2; min-width: 150px;">
+            <label style="font-weight: bold; font-size: 0.9em; color: #555;">Valor Total (R$):</label>
+            <input type="number" id="valor-total" class="input-busca" placeholder="Ex: 20000.00" step="0.01" />        
+        </div>
+        <div style="flex: 1; min-width: 100px;">
+            <label style="font-weight: bold; font-size: 0.9em; color: #555;">Qtd. Notas:</label>
+            <input type="number" id="qtd-notas" class="input-busca" placeholder="Ex: 20" min="1" max="20" />
+        </div>
+        <div style="display: flex; align-items: flex-end;">
+            <button onclick="gerarEsboçoLote()" id="btn-gerar" class="btn-completar btn-adicionar" style="background-color: {{ empresa_ativa.cor_secundaria|default:'#546e7a' }}; height: 45px; padding: 0 30px; border: none; border-radius: 5px; color: white; font-weight: bold; cursor: pointer;">
+            Gerar Esboço
+            </button>
+        </div>
+      </div>
+      <p style="font-size: 0.85em; color: #888; margin-top: 10px;">O sistema vai dividir o valor total aleatoriamente pela quantidade de notas escolhida.</p>
+    </div>
+
+    <div class="carrinho" style="padding: 0; background: white; border: 1px solid #eee; overflow: hidden;">
+        
+        <div id="msg-vazio" style="text-align: center; color: #bbb; padding: 40px 0;">
+            Informe os dados acima e clique em "Gerar Esboço" para pré-visualizar.
+        </div>
+
+        <div id="controles-lote" class="navegacao-lote hidden">
+            <div id="container-bolinhas" class="bolinhas-wrapper">
+                </div>
+            
+            <div style="display: flex; align-items: center; margin-left: 10px;">
+                <div style="width: 1px; height: 30px; background: #ccc; margin-right: 10px;"></div>
+                <button onclick="alternarModoVisualizacao()" class="btn-hamburger" title="Alternar Vista">☰</button>
+            </div>
+        </div>
+
+        <div id="conteudo-lote" class="area-conteudo hidden"></div>
+
+    </div>
+
+    <div class="secao-inferior" id="rodape-emissao">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px dashed #eee; padding-bottom: 10px; margin-bottom: 15px;">
+          <span style="font-size: 1.2em; font-weight: bold; color: #555;">Total Simulado:</span>
+          <div class="total-display" id="totalDisplay" style="color: {{ empresa_ativa.cor_secundaria|default:'#546e7a' }}; margin: 0; padding: 0; background: transparent;">R$ 0,00</div>
+      </div>
+
+      <div class="area-pagamento" style="margin-bottom: 15px;">
+        <label for="forma_pagamento" style="font-weight: bold; display: block; margin-bottom: 5px; color: {{ empresa_ativa.cor_primaria|default:'#00838f' }};">Forma de Pagamento Padrão:</label>
+        <select id="forma_pagamento" class="input-busca" style="width: 100%; height: 45px;">
+          <option value="01">01 - Dinheiro</option>
+          <option value="03">03 - Cartão de Crédito</option>
+          <option value="04">04 - Cartão de Débito</option>
+          <option value="17">17 - PIX</option>
+        </select>
+      </div>
+
+      <button class="btn-emitir" id="btnEmitir" onclick="abrirModalConfirmacao()" style="background-color: {{ empresa_ativa.cor_secundaria|default:'#546e7a' }};" disabled>EMITIR TODAS AS NOTAS</button>
+      <button class="btn-limpar" onclick="limparLote()">Limpar Esboço ❌</button>
+    </div>
+
+    <dialog id="modalConfirmacaoLote" style="border: none; border-radius: 8px; padding: 25px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); min-width: 350px;">
+        <div style="font-size: 1.4em; font-weight: bold; color: {{ empresa_ativa.cor_primaria|default:'#00838f' }}; text-align: center; border-bottom: 2px dashed #eee; padding-bottom: 10px; margin-bottom: 15px;">
+            Confirmar Emissão em Lote?
+        </div>
+        
+        <div style="text-align: center; color: #555; font-size: 1.1em; margin-bottom: 10px;">
+            Você está prestes a emitir <strong id="qtdModalConfirmacao" style="color: #2c3e50; font-size: 1.2em;">0</strong> notas.
+        </div>
+        
+        <div id="valorModalConfirmacao" style="font-size: 1.8em; font-weight: bold; color: {{ empresa_ativa.cor_secundaria|default:'#27ae60' }}; text-align: center; margin-bottom: 5px;">
+            Total: R$ 0,00
+        </div>
+
+        <div id="pagamentoModalConfirmacao" style="text-align: center; color: #7f8c8d; font-size: 1.1em; margin-bottom: 25px; font-weight: bold;">
+            Forma: ...
+        </div>
+
+        <div style="display: flex; gap: 10px; justify-content: center;">
+            <button onclick="fecharModalConfirmacao()" style="flex: 1; padding: 12px; background: #fff; border: 1px solid #ccc; border-radius: 5px; cursor: pointer; font-weight: bold; color: #555;">VOLTAR</button>
+            <button onclick="iniciarEmissaoLote()" style="flex: 1; padding: 12px; background: #27ae60; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; color: white;">CONFIRMAR</button>
+        </div>
+      </dialog>
+
+    {% csrf_token %}
+  </div>
+{% endblock %}
+
+{% block scripts %}
+  <script src="{% static 'js/emitir_auto.js' %}"></script>
+{% endblock %}

@@ -1,11 +1,10 @@
 /**
  * ============================================================================
- * MATECO SISTEMAS - CONTROLE DO PDV (PONTO DE VENDA)
- * * Este arquivo gerencia toda a interatividade da tela de emissão:
- * 1. Busca dinâmica de produtos.
- * 2. Gerenciamento do array 'carrinho' (adicionar/remover).
- * 3. Simulação de valores (Algoritmo do Carrinho Inteligente).
- * 4. Comunicação com a API para emissão da nota fiscal.
+ * MATECO SISTEMAS - CONTROLE DO PDV (PONTO DE VENDA) - MODO MANUAL
+ * * Este arquivo gerencia a tela de emissão manual:
+ * 1. Busca dinâmica de produtos via autocomplete.
+ * 2. Gerenciamento do array 'carrinho' (adicionar/remover/limpar).
+ * 3. Comunicação com a API para emissão da nota fiscal.
  * ============================================================================
  */
 
@@ -21,6 +20,11 @@ const buscaInput = document.getElementById('buscaInput');
 const listaSugestoes = document.getElementById('listaSugestoes');
 const modalQtd = document.getElementById('modalQuantidade');
 
+// Foca no input de busca assim que a página carrega
+window.onload = () => {
+    if(buscaInput) buscaInput.focus();
+};
+
 // ============================================================================
 // 2. LÓGICA DE BUSCA E AUTOCOMPLETE
 // ============================================================================
@@ -29,52 +33,62 @@ const modalQtd = document.getElementById('modalQuantidade');
  * Escuta o evento de digitação no campo de busca.
  * Faz requisições à API apenas se houver mais de 2 caracteres.
  */
-buscaInput.addEventListener('input', async (e) => {
-    const termo = e.target.value;
+if (buscaInput) {
+    buscaInput.addEventListener('input', async (e) => {
+        const termo = e.target.value;
 
-    // Limpa sugestões se o termo for muito curto
-    if (termo.length < 2) {
-        listaSugestoes.style.display = 'none';
-        return;
-    }
+        // Limpa sugestões se o termo for muito curto
+        if (termo.length < 2) {
+            listaSugestoes.style.display = 'none';
+            return;
+        }
 
-    // Busca produtos no backend
-    const res = await fetch(`/api/produtos/?q=${termo}`);
-    const produtos = await res.json();
+        try {
+            // Busca produtos no backend (Django)
+            const res = await fetch(`/api/produtos/?q=${termo}`);
+            if (!res.ok) throw new Error('Erro na busca');
+            
+            const produtos = await res.json();
+            listaSugestoes.innerHTML = '';
 
-    listaSugestoes.innerHTML = '';
-
-    // Renderiza a lista de sugestões
-    if (produtos.length > 0) {
-        listaSugestoes.style.display = 'block';
-        produtos.forEach(prod => {
-            const div = document.createElement('div');
-            div.className = 'sugestao-item';
-            div.innerHTML = `
-                <div style="flex:1">
-                    <div style="font-weight:bold">${prod.nome}</div>
-                    <small style="color:#777">R$ ${prod.preco_unitario.toFixed(2)}</small>
-                </div>
-                <div style="font-weight:bold; color:#2980b9">+</div>
-            `;
-            // Define ação de clique para abrir modal de quantidade
-            div.onclick = () => { abrirModalQtd(prod); };
-            listaSugestoes.appendChild(div);
-        });
-    } else {
-        listaSugestoes.style.display = 'none';
-    }
-});
+            // Renderiza a lista de sugestões
+            if (produtos.length > 0) {
+                listaSugestoes.style.display = 'block';
+                produtos.forEach(prod => {
+                    const div = document.createElement('div');
+                    div.className = 'sugestao-item';
+                    div.innerHTML = `
+                        <div style="flex:1">
+                            <div style="font-weight:bold">${prod.nome}</div>
+                            <small style="color:#777">R$ ${prod.preco_unitario.toFixed(2)} | Est: ${prod.estoque}</small>
+                        </div>
+                        <div style="font-weight:bold; color:#2980b9; font-size: 1.2em;">+</div>
+                    `;
+                    // Define ação de clique para abrir modal de quantidade
+                    div.onclick = () => { abrirModalQtd(prod); };
+                    listaSugestoes.appendChild(div);
+                });
+            } else {
+                listaSugestoes.innerHTML = '<div style="padding: 10px; color: #999; text-align: center;">Nenhum produto encontrado.</div>';
+                listaSugestoes.style.display = 'block';
+            }
+        } catch (error) {
+            console.error("Falha ao buscar produtos", error);
+        }
+    });
+}
 
 /**
- * Fecha a lista de sugestões se o usuário clicar fora do input de busca.
+ * Fecha a lista de sugestões se o utilizador clicar fora do input de busca.
  */
 document.addEventListener('click', (e) => {
-    if (e.target !== buscaInput) listaSugestoes.style.display = 'none';
+    if (e.target !== buscaInput && listaSugestoes) {
+        listaSugestoes.style.display = 'none';
+    }
 });
 
 // ============================================================================
-// 3. GERENCIAMENTO DE MODAIS (QUANTIDADE)
+// 3. GERENCIAMENTO DE MODAIS (QUANTIDADE E ADIÇÃO)
 // ============================================================================
 
 /**
@@ -90,7 +104,11 @@ function abrirModalQtd(prod) {
     modalQtd.showModal();
 
     // Dá foco no input de quantidade após o modal abrir
-    setTimeout(() => document.getElementById('qtdInputModal').focus(), 100);
+    setTimeout(() => {
+        const qtdInput = document.getElementById('qtdInputModal');
+        qtdInput.focus();
+        qtdInput.select(); // Seleciona o número '1' para facilitar a substituição
+    }, 100);
 }
 
 /**
@@ -100,6 +118,7 @@ function fecharModalQtd() {
     modalQtd.close();
     produtoSelecionadoTemp = null;
     buscaInput.value = '';
+    buscaInput.focus(); // Devolve o foco à busca para o próximo item
 }
 
 /**
@@ -108,117 +127,44 @@ function fecharModalQtd() {
 function confirmarAdicaoManual() {
     if (!produtoSelecionadoTemp) return;
 
-    const qtd = parseInt(document.getElementById('qtdInputModal').value);
+    const qtd = parseFloat(document.getElementById('qtdInputModal').value);
+    
     if (isNaN(qtd) || qtd <= 0) {
         alert("Quantidade inválida");
         return;
     }
 
-    carrinho.push({
-        id: produtoSelecionadoTemp.id,
-        nome: produtoSelecionadoTemp.nome,
-        preco_unitario: produtoSelecionadoTemp.preco_unitario,
-        quantidade: qtd,
-        valor_total: produtoSelecionadoTemp.preco_unitario * qtd,
-        ncm: produtoSelecionadoTemp.ncm
-    });
+    // Verifica se o item já existe no carrinho para apenas somar a quantidade
+    const indexExistente = carrinho.findIndex(item => item.id === produtoSelecionadoTemp.id);
+
+    if (indexExistente !== -1) {
+        carrinho[indexExistente].quantidade += qtd;
+        carrinho[indexExistente].valor_total = carrinho[indexExistente].quantidade * carrinho[indexExistente].preco_unitario;
+    } else {
+        carrinho.push({
+            id: produtoSelecionadoTemp.id,
+            nome: produtoSelecionadoTemp.nome,
+            preco_unitario: produtoSelecionadoTemp.preco_unitario,
+            quantidade: qtd,
+            valor_total: produtoSelecionadoTemp.preco_unitario * qtd,
+            ncm: produtoSelecionadoTemp.ncm
+        });
+    }
 
     atualizarCarrinho();
     fecharModalQtd();
 }
 
-// ============================================================================
-// 4. CARRINHO INTELIGENTE E SIMULAÇÃO
-// ============================================================================
-
-/**
- * Preenche o valor restante para atingir a meta (Valor Alvo).
- * Mantém os itens que já estão no carrinho.
- */
-async function completarValor() {
-    const valorAlvo = parseFloat(document.getElementById('valorAlvoInput').value);
-    const totalAtual = calcularTotal();
-
-    if (isNaN(valorAlvo) || valorAlvo <= totalAtual) {
-        alert("A meta deve ser maior que o total atual."); return;
+// Permite confirmar a quantidade pressionando a tecla "Enter"
+document.getElementById('qtdInputModal')?.addEventListener('keypress', function (e) {
+    if (e.key === 'Enter') {
+        confirmarAdicaoManual();
     }
+});
 
-    const falta = valorAlvo - totalAtual;
-
-    // Feedback visual no botão
-    const btn = document.querySelector('.btn-completar');
-    const txtOriginal = btn.innerText;
-    btn.innerText = "⏳...";
-    btn.disabled = true;
-
-    try {
-        const res = await fetch(`/api/produtos/?simular=true&valor=${falta}`);
-        const data = await res.json();
-
-        if (data.error) { alert(data.error); return; }
-
-        // Adiciona os itens simulados ao carrinho existente
-        data.itens.forEach(item => carrinho.push(item));
-        atualizarCarrinho();
-    } catch (e) {
-        alert("Erro de conexão.");
-    } finally {
-        btn.innerText = txtOriginal;
-        btn.disabled = false;
-    }
-}
-
-/**
- * Limpa o carrinho atual e refaz a simulação do zero para o valor alvo.
- */
-async function refazerSimulacao() {
-    const valorAlvo = parseFloat(document.getElementById('valorAlvoInput').value);
-    if (isNaN(valorAlvo) || valorAlvo <= 0) { alert("Digite uma meta para refazer."); return; }
-
-    carrinho = [];
-    atualizarCarrinho();
-    await completarValor();
-}
-
-/**
- * Gera um carrinho completo baseado no painel de "Valor Alvo" (Aba 2).
- */
-async function gerarCarrinhoInteligente() {
-    const valorAlvo = parseFloat(document.getElementById('valor-alvo').value);
-
-    if (isNaN(valorAlvo) || valorAlvo <= 0) {
-        alert("Por favor, digite um valor válido para gerar o carrinho.");
-        return;
-    }
-
-    const btn = document.querySelector('#painel-valor .btn-adicionar');
-    const txtOriginal = btn.innerText;
-    btn.innerText = "⏳...";
-    btn.disabled = true;
-
-    try {
-        const res = await fetch(`/api/produtos/?simular=true&valor=${valorAlvo}`);
-        const data = await res.json();
-
-        if (data.error) {
-            alert(data.error);
-            return;
-        }
-
-        carrinho = data.itens;
-        atualizarCarrinho();
-
-    } catch (e) {
-        console.error("Erro na simulação:", e);
-        alert("Erro ao conectar com o servidor.");
-    } finally {
-        btn.innerText = "⚡Gerar";
-        btn.disabled = false;
-    }
-}
 
 // ============================================================================
-// 5. GERENCIAMENTO DO CARRINHO (CRUD)
+// 4. GERENCIAMENTO DO CARRINHO (CRUD E VISUAL)
 // ============================================================================
 
 /**
@@ -232,7 +178,7 @@ function atualizarCarrinho() {
 
     // Estado Vazio
     if (carrinho.length === 0) {
-        divCarrinho.innerHTML = '<div style="text-align: center; color: #bbb; padding: 30px 0;">🛒 Seu carrinho está vazio</div>';
+        divCarrinho.innerHTML = '<div style="text-align: center; color: #bbb; padding: 30px 0;">Seu carrinho está vazio 🛒</div>';
         totalDisplay.innerText = "R$ 0,00";
         btnEmitir.disabled = true;
         btnEmitir.style.background = "#bdc3c7";
@@ -251,7 +197,7 @@ function atualizarCarrinho() {
                     <strong>${item.quantidade}x</strong> ${item.nome}
                 </div>
                 <div class="item-valor">R$ ${item.valor_total.toFixed(2)}</div>
-                <button class="btn-remover" onclick="removerItem(${index})">×</button>
+                <button class="btn-remover" onclick="removerItem(${index})" title="Remover item">×</button>
             </div>
         `;
     });
@@ -273,12 +219,15 @@ function removerItem(index) {
 }
 
 /**
- * Esvazia completamente o carrinho após confirmação.
+ * Esvazia completamente o carrinho após confirmação do utilizador.
  */
 function limparCarrinho() {
-    if (confirm("Limpar todo o carrinho?")) {
+    if (carrinho.length === 0) return;
+    
+    if (confirm("Tem a certeza que deseja limpar todo o carrinho?")) {
         carrinho = [];
         atualizarCarrinho();
+        buscaInput.focus();
     }
 }
 
@@ -290,12 +239,12 @@ function calcularTotal() {
 }
 
 // ============================================================================
-// 6. EMISSÃO DE NOTA FISCAL
+// 5. EMISSÃO DE NOTA FISCAL (ENVIO PARA A API)
 // ============================================================================
 
 /**
- * Abre o modal de confirmação final antes de enviar para a API.
- * Exibe o total e a forma de pagamento selecionada.
+ * Abre o modal de confirmação final antes de enviar para o Django.
+ * Exibe o total e a forma de pagamento selecionada para evitar erros.
  */
 function emitirNota() {
     const modalConfirm = document.getElementById('modalConfirmacao');
@@ -319,95 +268,73 @@ function emitirNota() {
 
 /**
  * Envia os dados para o backend (Django) -> Nuvem Fiscal.
- * Processa a resposta e atualiza a UI com Sucesso (Link PDF) ou Erro.
+ * Processa a resposta e atualiza a Interface com Sucesso (Link PDF) ou Erro.
  */
 async function processarEnvioReal() {
     const btn = document.getElementById('btnEmitir');
     const statusDiv = document.getElementById('status');
     const formaPagamento = document.getElementById('forma_pagamento').value;
-
-    // --- NOVO: Captura o cliente selecionado ---
     const clienteSelect = document.getElementById('cliente-select');
-    const clienteId = clienteSelect ? clienteSelect.value : null;
-    // -------------------------------------------
+    
+    const clienteId = (clienteSelect && clienteSelect.value !== "") ? clienteSelect.value : null;
 
     statusDiv.innerHTML = '';
-
-    btn.disabled = true; btn.innerText = "🚀 Enviando...";
+    btn.disabled = true; 
+    btn.innerText = "🚀 A Emitir...";
 
     try {
         const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        
+        // Dispara o pedido para o Django
         const res = await fetch('/emitir-nota/', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrftoken },
+            headers: { 
+                'Content-Type': 'application/json', 
+                'X-CSRFToken': csrftoken 
+            },
             body: JSON.stringify({
                 itens: carrinho,
                 forma_pagamento: formaPagamento,
                 cliente_id: clienteId 
             })
         });
+        
         const data = await res.json();
 
+        // Tratamento da Resposta
         if (res.ok) {
             statusDiv.innerHTML = `
-        <div class="sucesso-msg" style="position: relative;">
-            <span onclick="this.parentElement.remove()" style="position: absolute; right: 10px; top: 5px; cursor: pointer; font-weight: bold;">×</span>
-            <h3>✅ Nota Autorizada!</h3>
-            <a href="/imprimir-nota/${data.id_nota}/" target="_blank" class="btn-pdf">
-                📄 BAIXAR / IMPRIMIR PDF
-            </a>
-        </div>`;
+                <div class="sucesso-msg" style="position: relative;">
+                    <span onclick="this.parentElement.remove()" style="position: absolute; right: 10px; top: 5px; cursor: pointer; font-weight: bold; font-size: 1.2em;">×</span>
+                    <h3>✅ Nota Autorizada com Sucesso!</h3>
+                    <a href="/imprimir-nota/${data.id_nota}/" target="_blank" class="btn-pdf">
+                        📄 BAIXAR / IMPRIMIR PDF
+                    </a>
+                </div>`;
+            
+            // Limpa a tela para a próxima venda
             carrinho = [];
             atualizarCarrinho();
+            if(clienteSelect) clienteSelect.value = ""; // Reseta o cliente
+            buscaInput.focus();
+            
         } else {
             statusDiv.innerHTML = `
                 <div class="alerta-personalizado alerta-erro">
                     <span class="btn-fechar-alerta" onclick="this.parentElement.remove()">×</span>
-                    <h3>❌ Erro: ${data.mensagem}</h3>
+                    <h3>❌ Erro na Emissão:</h3>
+                    <p>${data.mensagem}</p>
                 </div>`;
         }
     } catch (e) {
-        statusDiv.innerHTML = `<div class="alerta-personalizado alerta-erro"><h3>⚠️ Erro de comunicação</h3></div>`;
+        statusDiv.innerHTML = `
+            <div class="alerta-personalizado alerta-erro">
+                <span class="btn-fechar-alerta" onclick="this.parentElement.remove()">×</span>
+                <h3>⚠️ Erro de comunicação com o servidor.</h3>
+                <p>Verifique a sua internet e tente novamente.</p>
+            </div>`;
     } finally {
         btn.innerText = "EMITIR NOTA";
         if (carrinho.length > 0) btn.disabled = false;
-    }
-}
-
-// ============================================================================
-// 7. CONTROLE DE INTERFACE (ABAS)
-// ============================================================================
-
-/**
- * Alterna entre o modo "Manual" (Busca) e "Valor Alvo" (Simulação).
- * @param {string} modo - 'manual' ou 'valor'.
- */
-function mudarModo(modo) {
-    const btnManual = document.getElementById('btn-manual');
-    const btnValor = document.getElementById('btn-valor');
-    const painelManual = document.getElementById('painel-manual');
-    const painelValor = document.getElementById('painel-valor');
-
-    if (modo === 'manual') {
-        btnManual.classList.add('ativo');
-        btnValor.classList.remove('ativo');
-        painelManual.classList.remove('hidden');
-        painelValor.classList.add('hidden');
-
-        // Pequeno delay para garantir que o elemento está visível antes do foco
-        setTimeout(() => {
-            const el = document.getElementById('buscaInput');
-            if (el) el.focus();
-        }, 100);
-    } else {
-        btnManual.classList.remove('ativo');
-        btnValor.classList.add('ativo');
-        painelManual.classList.add('hidden');
-        painelValor.classList.remove('hidden');
-
-        setTimeout(() => {
-            const el = document.getElementById('valor-alvo');
-            if (el) el.focus();
-        }, 100);
     }
 }

@@ -196,23 +196,39 @@
 
     <div class="resumo-bar">
         <div class="resumo-item dinheiro">
-            <span>Dinheiro</span>
+            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center; margin-bottom: 5px;">
+                <span style="margin: 0;">Dinheiro</span>
+                <span style="margin: 0; padding: 2px 6px; background: rgba(46, 125, 50, 0.15); border-radius: 10px; color: #2e7d32; font-weight: bold; font-size: 0.7em;">{{ percentuais.dinheiro|floatformat:1 }}%</span>
+            </div>
             <strong>R$ {{ totais.total_dinheiro|default:0|floatformat:2 }}</strong>
         </div>
+        
         <div class="resumo-item pix">
-            <span>PIX</span>
+            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center; margin-bottom: 5px;">
+                <span style="margin: 0;">PIX</span>
+                <span style="margin: 0; padding: 2px 6px; background: rgba(21, 101, 192, 0.15); border-radius: 10px; color: #1565c0; font-weight: bold; font-size: 0.7em;">{{ percentuais.pix|floatformat:1 }}%</span>
+            </div>
             <strong>R$ {{ totais.total_pix|default:0|floatformat:2 }}</strong>
         </div>
+        
         <div class="resumo-item debito">
-            <span>Débito</span>
+            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center; margin-bottom: 5px;">
+                <span style="margin: 0;">Débito</span>
+                <span style="margin: 0; padding: 2px 6px; background: rgba(249, 168, 37, 0.15); border-radius: 10px; color: #f9a825; font-weight: bold; font-size: 0.7em;">{{ percentuais.debito|floatformat:1 }}%</span>
+            </div>
             <strong>R$ {{ totais.total_debito|default:0|floatformat:2 }}</strong>
         </div>
+        
         <div class="resumo-item credito">
-            <span>Crédito</span>
+            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center; margin-bottom: 5px;">
+                <span style="margin: 0;">Crédito</span>
+                <span style="margin: 0; padding: 2px 6px; background: rgba(198, 40, 40, 0.15); border-radius: 10px; color: #c62828; font-weight: bold; font-size: 0.7em;">{{ percentuais.credito|floatformat:1 }}%</span>
+            </div>
             <strong>R$ {{ totais.total_credito|default:0|floatformat:2 }}</strong>
         </div>
+        
         <div class="resumo-item total">
-            <span>TOTAL GERAL</span>
+            <span style="margin-bottom: 5px;">TOTAL GERAL</span>
             <strong>R$ {{ totais.total_geral|default:0|floatformat:2 }}</strong>
         </div>
     </div>
