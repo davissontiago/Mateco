@@ -24,9 +24,13 @@ def simular_carrinho_inteligente(valor_alvo: float, produtos_disponiveis: List[A
     opcoes_qtd = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     pesos_qtd  = [50, 15, 10, 5, 5, 3, 3, 3, 3, 3] 
 
+    # Embaralha a lista para não seguir sempre a mesma ordem de preços
+    produtos_disponiveis = list(produtos_disponiveis)
+    random.shuffle(produtos_disponiveis)
+
     while total_atual < valor_alvo:
         falta = valor_alvo - total_atual
-        
+
         # Filtra apenas produtos com preço inferior ao valor restante (que cabem no carrinho)
         produtos_que_cabem = [p for p in produtos_disponiveis if float(p.preco) <= falta]
         

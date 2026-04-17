@@ -16,5 +16,7 @@ media/
 *.csv
 
 #backups
-backup_mateco.json
-backup.json
+backupsAndData
+
+#ia
+CLAUDE.md

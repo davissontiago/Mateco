@@ -15,16 +15,24 @@ let notaAtualIndex = 0; // Controla qual bolinha/nota está selecionada
 function dividirValorAleatoriamente(total, qtd) {
     let partes = [];
     let soma = 0;
-    let pesos = Array.from({length: qtd}, () => Math.random() * 0.5 + 0.5); 
+    // Pesos com variação maior para evitar divisão uniforme
+    let pesos = Array.from({length: qtd}, () => Math.random() * 1.2 + 0.3);
     let pesoTotal = pesos.reduce((a, b) => a + b, 0);
 
     for(let i = 0; i < qtd - 1; i++) {
-        let valorFracao = Math.floor((pesos[i] / pesoTotal) * total * 100) / 100;
-        partes.push(valorFracao);
-        soma += valorFracao;
+        let valorBase = (pesos[i] / pesoTotal) * total;
+        // Ruído de ±3% para quebrar o padrão matemático
+        let ruido = valorBase * (Math.random() * 0.06 - 0.03);
+        let valorFinal = Math.floor((valorBase + ruido) * 100) / 100;
+        // Garante valor mínimo realista por nota (R$ 8,00)
+        valorFinal = Math.max(valorFinal, 8.00);
+        partes.push(valorFinal);
+        soma += valorFinal;
     }
-    
+
     let ultimaNota = Math.round((total - soma) * 100) / 100;
+    // Se a última ficou negativa ou muito pequena, redistribui
+    if (ultimaNota < 8.00) ultimaNota = 8.00;
     partes.push(ultimaNota);
     return partes;
 }
@@ -225,7 +233,8 @@ function renderizarVistaLista(container) {
         let statusHtml = `<span class="lote-status">Pendente</span>`;
         let classCard = '';
         
-        if (nota.status === 'emitindo') statusHtml = `<span class="lote-status status-emitindo">⏳ Emitindo...</span>`;
+        if (nota.status === 'emitindo' && nota.mensagem.startsWith('Aguardando')) statusHtml = `<span class="lote-status status-aguardando">🕐 ${nota.mensagem}</span>`;
+        else if (nota.status === 'emitindo') statusHtml = `<span class="lote-status status-emitindo">⏳ Emitindo...</span>`;
         else if (nota.status === 'sucesso') { statusHtml = `<span class="lote-status status-sucesso">✅ Autorizada</span>`; classCard = 'sucesso'; }
         else if (nota.status === 'erro') { statusHtml = `<span class="lote-status status-erro">❌ Falhou</span>`; classCard = 'erro'; }
 
@@ -307,6 +316,26 @@ function limparLote() {
 // 4. EMISSÃO SEQUENCIAL
 // ============================================================================
 
+function aguardar(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// Retorna um delay aleatório em ms entre minSeg e maxSeg segundos
+function tempoAleatorio(minSeg = 4, maxSeg = 13) {
+    return (Math.floor(Math.random() * (maxSeg - minSeg + 1)) + minSeg) * 1000;
+}
+
+// Exibe contagem regressiva visível na nota enquanto aguarda
+async function contarRegressiva(nota, totalMs) {
+    const passos = Math.ceil(totalMs / 1000);
+    for (let s = passos; s > 0; s--) {
+        nota.mensagem = `Aguardando ${s}s...`;
+        renderizarInterfaceLote();
+        await aguardar(1000);
+    }
+    nota.mensagem = '';
+}
+
 // ============================================================================
 // MODAL DE CONFIRMAÇÃO
 // ============================================================================
@@ -351,8 +380,15 @@ async function iniciarEmissaoLote() {
 
         if (nota.status === 'sucesso') continue;
 
+        // Delay humano entre notas (pula apenas na primeira)
+        if (i > 0) {
+            const delayMs = tempoAleatorio(4, 13);
+            await contarRegressiva(nota, delayMs);
+        }
+
         nota.status = 'emitindo';
-        renderizarInterfaceLote(); // O renderizador agora pinta a bolinha de laranja piscando
+        nota.mensagem = '';
+        renderizarInterfaceLote();
 
         try {
             const res = await fetch('/emitir-nota/', {
@@ -375,7 +411,7 @@ async function iniciarEmissaoLote() {
             nota.mensagem = "Falha de rede.";
         }
 
-        renderizarInterfaceLote(); // O renderizador pinta a bolinha de Verde ou Vermelho
+        renderizarInterfaceLote();
     }
     
     document.getElementById('valor-total').value = '';
