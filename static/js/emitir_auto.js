@@ -15,24 +15,19 @@ let notaAtualIndex = 0; // Controla qual bolinha/nota está selecionada
 function dividirValorAleatoriamente(total, qtd) {
     let partes = [];
     let soma = 0;
-    // Pesos com variação maior para evitar divisão uniforme
-    let pesos = Array.from({length: qtd}, () => Math.random() * 1.2 + 0.3);
+    // Pesos com amplitude maior para gerar splits visivelmente diferentes entre si
+    let pesos = Array.from({length: qtd}, () => Math.random() * 1.5 + 0.2);
     let pesoTotal = pesos.reduce((a, b) => a + b, 0);
 
-    for(let i = 0; i < qtd - 1; i++) {
-        let valorBase = (pesos[i] / pesoTotal) * total;
-        // Ruído de ±3% para quebrar o padrão matemático
-        let ruido = valorBase * (Math.random() * 0.06 - 0.03);
-        let valorFinal = Math.floor((valorBase + ruido) * 100) / 100;
-        // Garante valor mínimo realista por nota (R$ 8,00)
-        valorFinal = Math.max(valorFinal, 8.00);
-        partes.push(valorFinal);
-        soma += valorFinal;
+    for (let i = 0; i < qtd - 1; i++) {
+        // Arredonda para baixo em centavos para não acumular erro
+        let valorFracao = Math.floor((pesos[i] / pesoTotal) * total * 100) / 100;
+        partes.push(valorFracao);
+        soma += valorFracao;
     }
 
+    // Última nota absorve o restante exato — garante que a soma bata com o total
     let ultimaNota = Math.round((total - soma) * 100) / 100;
-    // Se a última ficou negativa ou muito pequena, redistribui
-    if (ultimaNota < 8.00) ultimaNota = 8.00;
     partes.push(ultimaNota);
     return partes;
 }

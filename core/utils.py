@@ -24,8 +24,10 @@ def simular_carrinho_inteligente(valor_alvo: float, produtos_disponiveis: List[A
     opcoes_qtd = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     pesos_qtd  = [50, 15, 10, 5, 5, 3, 3, 3, 3, 3] 
 
-    # Embaralha a lista para não seguir sempre a mesma ordem de preços
+    # Converte para lista para poder embaralhar sem alterar o original
+    # Mantém separado o mais barato (índice 0 da lista ordenada) para o fallback
     produtos_disponiveis = list(produtos_disponiveis)
+    produto_fallback = produtos_disponiveis[0]  # mais barato, garantido pelo order_by('preco')
     random.shuffle(produtos_disponiveis)
 
     while total_atual < valor_alvo:
@@ -48,8 +50,8 @@ def simular_carrinho_inteligente(valor_alvo: float, produtos_disponiveis: List[A
             if quantidade_final < 1: 
                 quantidade_final = 1
         else:
-            # Caso nenhum produto caiba exatamente, adiciona o primeiro da lista para encerrar o loop
-            prod = produtos_disponiveis[0] 
+            # Caso nenhum produto caiba exatamente, usa o mais barato para encerrar o loop
+            prod = produto_fallback
             preco = float(prod.preco)
             quantidade_final = 1
 
