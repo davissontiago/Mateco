@@ -122,3 +122,10 @@ STORAGES = {
 LOGIN_REDIRECT_URL = 'home' # Após login, vai para a Home
 LOGOUT_REDIRECT_URL = 'login' # Após logout, vai para o Login
 LOGIN_URL = 'login' # URL da página de login
+
+# ==================================================
+# 8. CRIPTOGRAFIA DE CAMPOS SENSÍVEIS
+# ==================================================
+# Chave separada de SECRET_KEY para cifrar certificados A1, senhas PFX e CSC.
+# Rotacionar SECRET_KEY não invalida certificados em repouso.
+FIELD_ENCRYPTION_KEY = config('FIELD_ENCRYPTION_KEY', default='')

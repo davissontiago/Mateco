@@ -53,13 +53,45 @@ class Empresa(models.Model):
         verbose_name="Regime Tributário (CRT)",
     )
     
-    # Campo do Ambiente (Preenchido conforme solicitado)
+    # Campo do Ambiente (afeta tanto NuvemFiscal quanto SEFAZ direto)
     ambiente = models.CharField(
-        max_length=20, 
-        choices=AMBIENTE_CHOICES, 
+        max_length=20,
+        choices=AMBIENTE_CHOICES,
         default='homologacao',
-        verbose_name="Ambiente Nuvem Fiscal"
+        verbose_name="Ambiente de Emissão"
     )
+
+    # --- EMISSOR FISCAL ---
+    EMISSOR_FISCAL_CHOICES = [
+        ('nuvem', 'Nuvem Fiscal (API)'),
+        ('direto', 'SEFAZ Direto'),
+    ]
+    emissor_fiscal = models.CharField(
+        max_length=10,
+        choices=EMISSOR_FISCAL_CHOICES,
+        default='nuvem',
+        verbose_name="Emissor Fiscal",
+        help_text="Alternar entre API da Nuvem Fiscal e comunicação direta com a SEFAZ.",
+    )
+
+    # --- CERTIFICADO DIGITAL A1 (cifrado via core.crypto) ---
+    certificado_a1_pfx_homologacao = models.BinaryField(blank=True, null=True, verbose_name="PFX Homologação (cifrado)")
+    certificado_a1_senha_homologacao = models.BinaryField(blank=True, null=True, verbose_name="Senha PFX Homologação (cifrado)")
+    certificado_a1_validade_homologacao = models.DateField(blank=True, null=True, verbose_name="Validade Cert. Homologação")
+
+    certificado_a1_pfx_producao = models.BinaryField(blank=True, null=True, verbose_name="PFX Produção (cifrado)")
+    certificado_a1_senha_producao = models.BinaryField(blank=True, null=True, verbose_name="Senha PFX Produção (cifrado)")
+    certificado_a1_validade_producao = models.DateField(blank=True, null=True, verbose_name="Validade Cert. Produção")
+
+    # --- CSC (Código de Segurança do Contribuinte) para QR Code NFC-e ---
+    csc_id_homologacao = models.CharField(max_length=10, blank=True, null=True, verbose_name="CSC ID Homologação")
+    csc_token_homologacao = models.BinaryField(blank=True, null=True, verbose_name="CSC Token Homologação (cifrado)")
+    csc_id_producao = models.CharField(max_length=10, blank=True, null=True, verbose_name="CSC ID Produção")
+    csc_token_producao = models.BinaryField(blank=True, null=True, verbose_name="CSC Token Produção (cifrado)")
+
+    # --- SÉRIES NFC-e por ambiente ---
+    serie_nfce_homologacao = models.IntegerField(default=2, verbose_name="Série NFC-e Homologação")
+    serie_nfce_producao = models.IntegerField(default=3, verbose_name="Série NFC-e Produção")
 
     # --- ENDEREÇO ---
     cep = models.CharField(max_length=9, verbose_name="CEP")
@@ -249,6 +281,16 @@ class NotaFiscal(models.Model):
     data_emissao = models.DateTimeField(
         auto_now_add=True, verbose_name="Data de Emissão"
     )
+
+    # ==================================================
+    # 5. CAMPOS EXCLUSIVOS DO EMISSOR SEFAZ DIRETO
+    # ==================================================
+    xml_assinado = models.TextField(blank=True, null=True, verbose_name="XML + Protocolo")
+    protocolo_autorizacao = models.CharField(max_length=20, blank=True, null=True, verbose_name="Protocolo de Autorização")
+    qrcode_url = models.URLField(max_length=700, blank=True, null=True, verbose_name="URL QR Code")
+    xml_cancelamento = models.TextField(blank=True, null=True, verbose_name="XML Cancelamento")
+    protocolo_cancelamento = models.CharField(max_length=20, blank=True, null=True, verbose_name="Protocolo Cancelamento")
+    data_cancelamento = models.DateTimeField(blank=True, null=True, verbose_name="Data Cancelamento")
 
     # ==================================================
     # 4. MÉTODOS E CONFIGURAÇÕES

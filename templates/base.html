@@ -49,6 +49,7 @@
             <a href="{% url 'listar_produtos' %}">Produtos</a>
             <a href="{% url 'listar_clientes' %}">Clientes</a>
             <a href="{% url 'listar_notas' %}">Histórico</a>
+            <a href="{% url 'configuracoes' %}">Configurações</a>
 
             <form action="{% url 'logout' %}" method="post" style="display:inline;">
               {% csrf_token %}

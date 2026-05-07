@@ -1,0 +1,436 @@
+{% extends 'base.html' %}
+{% block title %}Configurações Fiscais — {{ empresa.nome_fantasia }}{% endblock %}
+
+{% block head %}
+<style>
+  /* ── layout ── */
+  .cfg-wrapper {
+    max-width: 900px;
+    margin: 2rem auto;
+    padding: 0 1rem 3rem;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* ── cabeçalho ── */
+  .cfg-header { margin-bottom: 2rem; }
+  .cfg-header h2 {
+    color: var(--cor-primaria);
+    font-size: 1.6rem;
+    margin: 0 0 .3rem;
+  }
+  .cfg-header p {
+    color: #666;
+    margin: 0;
+    font-size: .9rem;
+  }
+
+  /* ── alertas ── */
+  .cfg-alert {
+    padding: .85rem 1.1rem;
+    border-radius: 8px;
+    margin-bottom: 1.2rem;
+    font-size: .9rem;
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+  }
+  .cfg-alert.success { background: #d4edda; color: #155724; border-left: 4px solid #28a745; }
+  .cfg-alert.error   { background: #f8d7da; color: #721c24; border-left: 4px solid #dc3545; }
+
+  /* ── seções ── */
+  .cfg-section {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0,0,0,.07);
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+  }
+  .cfg-section-header {
+    background: var(--cor-primaria);
+    color: #fff;
+    padding: .75rem 1.25rem;
+    font-weight: 600;
+    font-size: .95rem;
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+  }
+  .cfg-section-header .icon { font-size: 1.1rem; }
+  .cfg-section-body { padding: 1.25rem; }
+
+  /* ── grid de 2 colunas ── */
+  .cfg-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+  @media (max-width: 640px) { .cfg-grid-2 { grid-template-columns: 1fr; } }
+
+  /* ── fieldset de ambiente ── */
+  .cfg-fieldset {
+    border: 1.5px solid #e0e0e0;
+    border-radius: 10px;
+    padding: 1rem 1.1rem 1.1rem;
+  }
+  .cfg-fieldset legend {
+    font-size: .8rem;
+    font-weight: 700;
+    color: var(--cor-primaria);
+    padding: 0 .4rem;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+  }
+
+  /* ── campos de formulário ── */
+  .cfg-field { margin-bottom: .9rem; }
+  .cfg-field:last-child { margin-bottom: 0; }
+  .cfg-label {
+    display: block;
+    font-size: .82rem;
+    font-weight: 600;
+    color: #444;
+    margin-bottom: .35rem;
+  }
+  .cfg-input {
+    width: 100%;
+    padding: .5rem .75rem;
+    border: 1.5px solid #d0d0d0;
+    border-radius: 7px;
+    font-size: .9rem;
+    font-family: inherit;
+    transition: border-color .2s, box-shadow .2s;
+    box-sizing: border-box;
+    background: #fafafa;
+  }
+  .cfg-input:focus {
+    outline: none;
+    border-color: var(--cor-primaria);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--cor-primaria) 15%, transparent);
+    background: #fff;
+  }
+  select.cfg-input { cursor: pointer; }
+  .cfg-hint {
+    font-size: .77rem;
+    color: #888;
+    margin-top: .3rem;
+  }
+  .cfg-error {
+    font-size: .8rem;
+    color: #dc3545;
+    margin-top: .3rem;
+  }
+
+  /* ── badge de status do certificado ── */
+  .cert-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    font-size: .82rem;
+    padding: .3rem .75rem;
+    border-radius: 20px;
+    font-weight: 600;
+    margin-bottom: .9rem;
+  }
+  .cert-badge.ok  { background: #d4edda; color: #155724; }
+  .cert-badge.nok { background: #fff3cd; color: #856404; }
+
+  /* ── upload ── */
+  .cfg-file {
+    width: 100%;
+    padding: .45rem .5rem;
+    border: 1.5px dashed #c0c0c0;
+    border-radius: 7px;
+    font-size: .85rem;
+    background: #fafafa;
+    cursor: pointer;
+    box-sizing: border-box;
+    transition: border-color .2s;
+  }
+  .cfg-file:hover { border-color: var(--cor-primaria); }
+
+  /* ── radio/select de emissor e ambiente ── */
+  .emissor-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  @media (max-width: 480px) { .emissor-grid { grid-template-columns: 1fr; } }
+
+  .radio-card {
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    padding: .9rem 1rem;
+    cursor: pointer;
+    transition: border-color .2s, background .2s;
+    display: flex;
+    align-items: flex-start;
+    gap: .7rem;
+    user-select: none;
+  }
+  .radio-card:has(input:checked) {
+    border-color: var(--cor-primaria);
+    background: color-mix(in srgb, var(--cor-primaria) 6%, #fff);
+  }
+  .radio-card input { margin-top: .15rem; accent-color: var(--cor-primaria); width: 16px; height: 16px; flex-shrink: 0; }
+  .radio-card-label { font-weight: 600; font-size: .9rem; color: #333; display: block; margin-bottom: .15rem; }
+  .radio-card-desc  { font-size: .78rem; color: #777; }
+
+  /* ── botão salvar ── */
+  .cfg-footer { text-align: right; margin-top: 1.5rem; }
+  .btn-salvar {
+    background: var(--cor-primaria);
+    color: #fff;
+    border: none;
+    padding: .7rem 2.2rem;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity .2s, transform .1s;
+    font-family: inherit;
+  }
+  .btn-salvar:hover  { opacity: .88; }
+  .btn-salvar:active { transform: scale(.97); }
+
+  /* ── número de série ── */
+  input[type=number].cfg-input { max-width: 140px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="cfg-wrapper">
+
+  <!-- cabeçalho -->
+  <div class="cfg-header">
+    <h2>Configurações Fiscais</h2>
+    <p><strong>{{ empresa.nome }}</strong> &mdash; CNPJ {{ empresa.cnpj }}</p>
+  </div>
+
+  <!-- alertas -->
+  {% if messages %}
+    {% for msg in messages %}
+      <div class="cfg-alert {% if 'success' in msg.tags %}success{% else %}error{% endif %}">
+        {% if 'success' in msg.tags %}✅{% else %}⚠️{% endif %} {{ msg }}
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <form method="post" enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+
+    <!-- ── 1. EMISSOR E AMBIENTE ── -->
+    <div class="cfg-section">
+      <div class="cfg-section-header"><span class="icon">⚙️</span> Emissor e Ambiente</div>
+      <div class="cfg-section-body">
+        <div class="cfg-grid-2">
+
+          <div class="cfg-field">
+            <span class="cfg-label">Emissor Fiscal</span>
+            <div class="emissor-grid">
+              <label class="radio-card">
+                <input type="radio" name="emissor_fiscal" value="nuvem"
+                  {% if form.instance.emissor_fiscal == 'nuvem' or not form.instance.pk %}checked{% endif %}>
+                <div>
+                  <span class="radio-card-label">☁️ Nuvem Fiscal</span>
+                  <span class="radio-card-desc">Emissão via API — funciona no Vercel</span>
+                </div>
+              </label>
+              <label class="radio-card">
+                <input type="radio" name="emissor_fiscal" value="direto"
+                  {% if form.instance.emissor_fiscal == 'direto' %}checked{% endif %}>
+                <div>
+                  <span class="radio-card-label">🏛️ SEFAZ Direto</span>
+                  <span class="radio-card-desc">Comunicação direta — requer certificado A1</span>
+                </div>
+              </label>
+            </div>
+            {% if form.emissor_fiscal.errors %}<div class="cfg-error">{{ form.emissor_fiscal.errors }}</div>{% endif %}
+          </div>
+
+          <div class="cfg-field">
+            <span class="cfg-label">Ambiente de Emissão</span>
+            <div class="emissor-grid">
+              <label class="radio-card">
+                <input type="radio" name="ambiente" value="homologacao"
+                  {% if form.instance.ambiente == 'homologacao' or not form.instance.pk %}checked{% endif %}>
+                <div>
+                  <span class="radio-card-label">🧪 Homologação</span>
+                  <span class="radio-card-desc">Testes — sem valor fiscal</span>
+                </div>
+              </label>
+              <label class="radio-card">
+                <input type="radio" name="ambiente" value="producao"
+                  {% if form.instance.ambiente == 'producao' %}checked{% endif %}>
+                <div>
+                  <span class="radio-card-label">✅ Produção</span>
+                  <span class="radio-card-desc">Notas reais — vale dinheiro!</span>
+                </div>
+              </label>
+            </div>
+            {% if form.ambiente.errors %}<div class="cfg-error">{{ form.ambiente.errors }}</div>{% endif %}
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ── 2. NUVEM FISCAL ── -->
+    <div class="cfg-section">
+      <div class="cfg-section-header"><span class="icon">☁️</span> Nuvem Fiscal (API)</div>
+      <div class="cfg-section-body">
+        <div class="cfg-grid-2">
+
+          <div class="cfg-fieldset">
+            <legend>Homologação</legend>
+            <div class="cfg-field">
+              <label class="cfg-label">{{ form.nuvem_client_id_homologacao.label }}</label>
+              {{ form.nuvem_client_id_homologacao }}
+            </div>
+            <div class="cfg-field">
+              <label class="cfg-label">{{ form.nuvem_client_secret_homologacao.label }}</label>
+              {{ form.nuvem_client_secret_homologacao }}
+              <div class="cfg-hint">Deixe em branco para manter o atual.</div>
+            </div>
+          </div>
+
+          <div class="cfg-fieldset">
+            <legend>Produção</legend>
+            <div class="cfg-field">
+              <label class="cfg-label">{{ form.nuvem_client_id_producao.label }}</label>
+              {{ form.nuvem_client_id_producao }}
+            </div>
+            <div class="cfg-field">
+              <label class="cfg-label">{{ form.nuvem_client_secret_producao.label }}</label>
+              {{ form.nuvem_client_secret_producao }}
+              <div class="cfg-hint">Deixe em branco para manter o atual.</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ── 3. CERTIFICADO A1 ── -->
+    <div class="cfg-section">
+      <div class="cfg-section-header"><span class="icon">🔐</span> Certificado Digital A1 (SEFAZ Direto)</div>
+      <div class="cfg-section-body">
+        <div class="cfg-grid-2">
+
+          <div class="cfg-fieldset">
+            <legend>Homologação</legend>
+            {% if cert_meta.hom_presente %}
+              <div class="cert-badge ok">
+                ✅ Configurado{% if cert_meta.hom_validade %} — válido até {{ cert_meta.hom_validade|date:"d/m/Y" }}{% endif %}
+              </div>
+            {% else %}
+              <div class="cert-badge nok">⚠️ Nenhum certificado configurado</div>
+            {% endif %}
+            <div class="cfg-field">
+              <label class="cfg-label">{{ form.pfx_homologacao.label }}</label>
+              {{ form.pfx_homologacao }}
+              {% if form.pfx_homologacao.errors %}<div class="cfg-error">{{ form.pfx_homologacao.errors }}</div>{% endif %}
+            </div>
+            <div class="cfg-field">
+              <label class="cfg-label">{{ form.senha_pfx_homologacao.label }}</label>
+              {{ form.senha_pfx_homologacao }}
+              {% if form.senha_pfx_homologacao.errors %}<div class="cfg-error">{{ form.senha_pfx_homologacao.errors }}</div>{% endif %}
+            </div>
+          </div>
+
+          <div class="cfg-fieldset">
+            <legend>Produção</legend>
+            {% if cert_meta.prod_presente %}
+              <div class="cert-badge ok">
+                ✅ Configurado{% if cert_meta.prod_validade %} — válido até {{ cert_meta.prod_validade|date:"d/m/Y" }}{% endif %}
+              </div>
+            {% else %}
+              <div class="cert-badge nok">⚠️ Nenhum certificado configurado</div>
+            {% endif %}
+            <div class="cfg-field">
+              <label class="cfg-label">{{ form.pfx_producao.label }}</label>
+              {{ form.pfx_producao }}
+              {% if form.pfx_producao.errors %}<div class="cfg-error">{{ form.pfx_producao.errors }}</div>{% endif %}
+            </div>
+            <div class="cfg-field">
+              <label class="cfg-label">{{ form.senha_pfx_producao.label }}</label>
+              {{ form.senha_pfx_producao }}
+              {% if form.senha_pfx_producao.errors %}<div class="cfg-error">{{ form.senha_pfx_producao.errors }}</div>{% endif %}
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ── 4. CSC ── -->
+    <div class="cfg-section">
+      <div class="cfg-section-header"><span class="icon">🔑</span> CSC — Código de Segurança do Contribuinte (QR Code NFC-e)</div>
+      <div class="cfg-section-body">
+        <div class="cfg-grid-2">
+
+          <div class="cfg-fieldset">
+            <legend>Homologação</legend>
+            <div class="cfg-field">
+              <label class="cfg-label">{{ form.csc_id_homologacao.label }}</label>
+              {{ form.csc_id_homologacao }}
+            </div>
+            <div class="cfg-field">
+              <label class="cfg-label">{{ form.csc_token_homologacao_plain.label }}</label>
+              {{ form.csc_token_homologacao_plain }}
+              <div class="cfg-hint">
+                {% if cert_meta.csc_hom_presente %}Token já configurado — deixe em branco para manter.
+                {% else %}Token ainda não configurado.{% endif %}
+              </div>
+            </div>
+          </div>
+
+          <div class="cfg-fieldset">
+            <legend>Produção</legend>
+            <div class="cfg-field">
+              <label class="cfg-label">{{ form.csc_id_producao.label }}</label>
+              {{ form.csc_id_producao }}
+            </div>
+            <div class="cfg-field">
+              <label class="cfg-label">{{ form.csc_token_producao_plain.label }}</label>
+              {{ form.csc_token_producao_plain }}
+              <div class="cfg-hint">
+                {% if cert_meta.csc_prod_presente %}Token já configurado — deixe em branco para manter.
+                {% else %}Token ainda não configurado.{% endif %}
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ── 5. SÉRIES ── -->
+    <div class="cfg-section">
+      <div class="cfg-section-header"><span class="icon">🔢</span> Séries NFC-e</div>
+      <div class="cfg-section-body">
+        <div class="cfg-grid-2">
+          <div class="cfg-field">
+            <label class="cfg-label">{{ form.serie_nfce_homologacao.label }}</label>
+            {{ form.serie_nfce_homologacao }}
+          </div>
+          <div class="cfg-field">
+            <label class="cfg-label">{{ form.serie_nfce_producao.label }}</label>
+            {{ form.serie_nfce_producao }}
+          </div>
+        </div>
+        <div class="cfg-hint" style="margin-top:.5rem;">
+          ⚠️ Alterar a série muda a sequência de numeração. Só mude se souber o que está fazendo.
+        </div>
+      </div>
+    </div>
+
+    <div class="cfg-footer">
+      <button type="submit" class="btn-salvar">Salvar Configurações</button>
+    </div>
+
+  </form>
+</div>
+
+<script>
+  /* Aplica classe cfg-input a todos os inputs/selects/textareas dentro das seções */
+  document.querySelectorAll('.cfg-section input:not([type=radio]):not([type=file]), .cfg-section select, .cfg-section textarea').forEach(el => {
+    el.classList.add('cfg-input');
+  });
+  document.querySelectorAll('.cfg-section input[type=file]').forEach(el => {
+    el.classList.add('cfg-file');
+  });
+</script>
+{% endblock %}

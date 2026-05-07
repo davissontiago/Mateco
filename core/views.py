@@ -1,17 +1,18 @@
 import json
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import JsonResponse, HttpResponse 
+from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
-from django.contrib import messages  # <--- ADICIONE ESTA LINHA AQUI
+from django.contrib import messages
 from django.db.models import Sum, Q
 
 # Importações locais do projeto
 from .models import NotaFiscal, Empresa, Cliente
-from .forms import ClienteForm
+from .forms import ClienteForm, EmpresaConfigForm
 from estoque.models import Produto
 from .utils import simular_carrinho_inteligente
-from .services import NuvemFiscalService 
+from .services import NuvemFiscalService
+from .fiscal_router import FiscalRouter
 
 
 # ==================================================
@@ -166,22 +167,21 @@ def buscar_produtos(request):
 @login_required
 def imprimir_nota(request, nota_id):
     empresa = get_empresa_usuario(request)
-    
-    # SEGURANÇA: Garante que só posso baixar notas da MINHA empresa
     nota = get_object_or_404(NotaFiscal, id=nota_id, empresa=empresa)
-    
-    if not nota.id_nota:
-        return JsonResponse({'error': 'Nota sem ID da Nuvem Fiscal.'}, status=404)
 
-    # ATENÇÃO: Aqui ainda estamos usando as credenciais do .env (Passo 5 vai corrigir isso)
+    # SEFAZ direto: não há PDF na NuvemFiscal; retorna QR Code ou XML para o cliente
+    if empresa.emissor_fiscal == 'direto' or not nota.id_nota:
+        if nota.qrcode_url:
+            return JsonResponse({'qrcode_url': nota.qrcode_url, 'chave': nota.chave})
+        return JsonResponse({'error': 'PDF não disponível para emissão SEFAZ direto neste momento.'}, status=404)
+
     pdf_content, erro_msg = NuvemFiscalService.baixar_pdf(empresa, nota.id_nota)
-    
     if pdf_content:
         response = HttpResponse(pdf_content, content_type='application/pdf')
         response['Content-Disposition'] = f'inline; filename="nota_{nota.numero}.pdf"'
         return response
-    
     return JsonResponse({'error': f'Falha ao baixar PDF: {erro_msg}'}, status=400)
+
 
 @login_required
 @csrf_exempt
@@ -190,46 +190,56 @@ def emitir_nota(request):
     if not empresa:
         return JsonResponse({'mensagem': 'Usuário sem empresa vinculada!'}, status=403)
 
-    if request.method == 'POST':
-        try:
-            dados = json.loads(request.body)
-            itens = dados.get('itens', [])
-            forma_pagamento = dados.get('forma_pagamento', '01')
-            
-            cliente_id = dados.get('cliente_id') 
-            cliente = None
-            if cliente_id:
-                # Busca o cliente e garante que é da mesma empresa (Segurança)
-                cliente = Cliente.objects.filter(id=cliente_id, empresa=empresa).first()
-                
-            
-            if not itens: 
-                return JsonResponse({'mensagem': 'Carrinho vazio'}, status=400)
-            
-            sucesso, resultado, valor = NuvemFiscalService.emitir_nfce(empresa, itens, forma_pagamento, cliente=cliente)
+    if request.method != 'POST':
+        return JsonResponse({'mensagem': 'Método não permitido'}, status=405)
 
-            if sucesso:
-                ambiente_usado = 'producao' if empresa.ambiente == 'producao' else 'homologacao'
-                nota = NotaFiscal.objects.create(
-                    empresa=empresa, 
-                    cliente=cliente,
-                    forma_pagamento=forma_pagamento,
-                    id_nota=resultado.get('id'),
-                    numero=resultado.get('numero', 0),
-                    serie=resultado.get('serie', 0),
-                    chave=resultado.get('chave', ''),
-                    valor_total=valor,
-                    status='AUTORIZADA',
-                    ambiente=ambiente_usado
-                )
-                return JsonResponse({'status': 'sucesso', 'id_nota': nota.id})
-            else:
-                return JsonResponse({'mensagem': f"Erro na API: {resultado}"}, status=400)
+    try:
+        dados = json.loads(request.body)
+        itens = dados.get('itens', [])
+        forma_pagamento = dados.get('forma_pagamento', '01')
 
-        except Exception as e:
-            return JsonResponse({'mensagem': f"Erro interno: {str(e)}"}, status=500)
-            
-    return JsonResponse({'mensagem': 'Método não permitido'}, status=405)
+        if not itens:
+            return JsonResponse({'mensagem': 'Carrinho vazio'}, status=400)
+
+        cliente_id = dados.get('cliente_id')
+        cliente = None
+        if cliente_id:
+            cliente = Cliente.objects.filter(id=cliente_id, empresa=empresa).first()
+
+        # Calcula total para montar pagamentos no formato unificado
+        valor_calculado = sum(float(i.get('valor_total', 0)) for i in itens)
+        pagamentos = [{'forma_pagamento': forma_pagamento, 'valor': round(valor_calculado, 2)}]
+
+        sucesso, resultado, valor = FiscalRouter.emitir_nfce(
+            empresa=empresa,
+            itens_carrinho=itens,
+            pagamentos=pagamentos,
+            cliente=cliente,
+        )
+
+        if sucesso:
+            nota = NotaFiscal.objects.create(
+                empresa=empresa,
+                cliente=cliente,
+                forma_pagamento=forma_pagamento,
+                id_nota=resultado.get('id') if empresa.emissor_fiscal == 'nuvem' else None,
+                numero=resultado.get('numero', 0),
+                serie=resultado.get('serie', 0),
+                chave=resultado.get('chave', ''),
+                valor_total=valor,
+                status='AUTORIZADA',
+                ambiente=empresa.ambiente,
+                # campos SEFAZ direto (None quando NuvemFiscal)
+                qrcode_url=resultado.get('qrcode_url') or None,
+                xml_assinado=resultado.get('xml_protocolo') or None,
+                protocolo_autorizacao=resultado.get('protocolo_autorizacao') or None,
+            )
+            return JsonResponse({'status': 'sucesso', 'id_nota': nota.id})
+        else:
+            return JsonResponse({'mensagem': f"Erro na emissão: {resultado}"}, status=400)
+
+    except Exception as e:
+        return JsonResponse({'mensagem': f"Erro interno: {str(e)}"}, status=500)
 
 @login_required
 def verificar_status_nota(request):
@@ -259,6 +269,46 @@ def verificar_status_nota(request):
         return JsonResponse({'mensagem': 'Nota NÃO existe na Nuvem Fiscal. Pode emitir sem medo.'})
     else:
         return JsonResponse({'erro': dados}, status=500)
+
+@login_required
+def configuracoes(request):
+    """
+    Página de configurações fiscais da empresa do usuário logado.
+    Restrita a is_staff. Opera apenas sobre a empresa do próprio usuário
+    (nunca aceita empresa_id da URL).
+    """
+    empresa = get_empresa_usuario(request)
+    if not empresa:
+        messages.error(request, "Usuário sem empresa vinculada.")
+        return redirect('home')
+
+    if request.method == 'POST':
+        form = EmpresaConfigForm(request.POST, request.FILES, instance=empresa)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Configurações salvas com sucesso!")
+            return redirect('configuracoes')
+        else:
+            messages.error(request, "Corrija os erros abaixo.")
+    else:
+        form = EmpresaConfigForm(instance=empresa)
+
+    # Metadados de certificado para exibição (nunca o conteúdo cifrado)
+    cert_meta = {
+        'hom_validade': empresa.certificado_a1_validade_homologacao,
+        'hom_presente': bool(empresa.certificado_a1_pfx_homologacao),
+        'prod_validade': empresa.certificado_a1_validade_producao,
+        'prod_presente': bool(empresa.certificado_a1_pfx_producao),
+        'csc_hom_presente': bool(empresa.csc_token_homologacao),
+        'csc_prod_presente': bool(empresa.csc_token_producao),
+    }
+
+    return render(request, 'configuracoes.html', {
+        'form': form,
+        'empresa': empresa,
+        'cert_meta': cert_meta,
+    })
+
 
 @login_required
 def listar_clientes(request):

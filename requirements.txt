@@ -11,3 +11,13 @@ sqlparse==0.5.4
 tzdata==2025.3
 urllib3==2.6.2
 whitenoise==6.11.0
+
+# SEFAZ Direto
+erpbrasil.assinatura>=1.6.0
+erpbrasil.edoc>=4.0.0
+erpbrasil.transmissao>=1.7.0
+nfelib>=2.0.0
+signxml>=3.2.0
+lxml>=5.0.0
+xsdata>=24.0.0
+cryptography>=42.0.0
