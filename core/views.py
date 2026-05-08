@@ -169,8 +169,8 @@ def imprimir_nota(request, nota_id):
     empresa = get_empresa_usuario(request)
     nota = get_object_or_404(NotaFiscal, id=nota_id, empresa=empresa)
 
-    # SEFAZ direto: não há PDF na NuvemFiscal; retorna QR Code ou XML para o cliente
-    if empresa.emissor_fiscal == 'direto' or not nota.id_nota:
+    # Nota sem id_nota foi emitida via SEFAZ direto; usa QR Code em vez de PDF.
+    if not nota.id_nota:
         if nota.qrcode_url:
             return JsonResponse({'qrcode_url': nota.qrcode_url, 'chave': nota.chave})
         return JsonResponse({'error': 'PDF não disponível para emissão SEFAZ direto neste momento.'}, status=404)
