@@ -1,10 +1,15 @@
 cryptography==48.0.0
 dj_database_url==3.1.2
 Django==6.0.5
+erpbrasil-assinatura==1.8.0
+erpbrasil-edoc==3.1.1
+erpbrasil-transmissao==1.1.0
 lxml==6.1.0
 nfelib==2.5.2
 psycopg2-binary==2.9.10
 python-decouple==3.8
 Requests==2.33.1
+signxml==4.4.0
 whitenoise==6.9.0
 xsdata==26.2
+zeep==4.3.2
