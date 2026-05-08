@@ -414,6 +414,19 @@
         <div class="cfg-hint" style="margin-top:.5rem;">
           ⚠️ Alterar a série muda a sequência de numeração. Só mude se souber o que está fazendo.
         </div>
+        <div class="cfg-grid-2" style="margin-top:1rem;">
+          <div class="cfg-field">
+            <label class="cfg-label">{{ form.numero_nfce_homologacao.label }}</label>
+            {{ form.numero_nfce_homologacao }}
+          </div>
+          <div class="cfg-field">
+            <label class="cfg-label">{{ form.numero_nfce_producao.label }}</label>
+            {{ form.numero_nfce_producao }}
+          </div>
+        </div>
+        <div class="cfg-hint" style="margin-top:.5rem;">
+          ⚠️ Ajuste apenas se o banco foi resetado e a SEFAZ já tem notas anteriores. O sistema usará max(banco, este valor) + 1.
+        </div>
       </div>
     </div>
 

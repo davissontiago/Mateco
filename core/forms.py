@@ -128,6 +128,13 @@ class EmpresaConfigForm(forms.ModelForm):
     def save(self, commit=True):
         empresa = super().save(commit=False)
 
+        # --- Secrets NuvemFiscal: preserva valor atual se campo enviado em branco ---
+        original = self.instance
+        if not empresa.nuvem_client_secret_homologacao:
+            empresa.nuvem_client_secret_homologacao = original.nuvem_client_secret_homologacao
+        if not empresa.nuvem_client_secret_producao:
+            empresa.nuvem_client_secret_producao = original.nuvem_client_secret_producao
+
         # --- Certificado homologação ---
         pfx_hom = self.cleaned_data.get('pfx_homologacao')
         senha_hom = self.cleaned_data.get('senha_pfx_homologacao', '')
