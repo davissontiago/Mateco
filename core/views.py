@@ -175,7 +175,7 @@ def imprimir_nota(request, nota_id):
             return JsonResponse({'qrcode_url': nota.qrcode_url, 'chave': nota.chave})
         return JsonResponse({'error': 'PDF não disponível para emissão SEFAZ direto neste momento.'}, status=404)
 
-    pdf_content, erro_msg = NuvemFiscalService.baixar_pdf(empresa, nota.id_nota)
+    pdf_content, erro_msg = NuvemFiscalService.baixar_pdf(empresa, nota.id_nota, ambiente=nota.ambiente)
     if pdf_content:
         response = HttpResponse(pdf_content, content_type='application/pdf')
         response['Content-Disposition'] = f'inline; filename="nota_{nota.numero}.pdf"'

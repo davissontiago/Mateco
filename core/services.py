@@ -119,8 +119,8 @@ class NuvemFiscalService:
             env_str = "producao" if is_producao else "homologacao"
             tp_amb_code = 1 if is_producao else 2  
             
-            # Separação de Séries: Série 1 para Testes, Série 2 para Produção
-            serie_nota = 2 if is_producao else 1 
+            # Série conforme configuração da empresa (mesma usada pelo SEFAZ direto)
+            serie_nota = empresa.serie_nfce_producao if is_producao else empresa.serie_nfce_homologacao
             
             base_url = cls.get_base_url(empresa)
             
@@ -227,8 +227,9 @@ class NuvemFiscalService:
             # 6. Numeração Sequencial
             # Busca a última nota emitida por ESTA empresa nesta SÉRIE específica
             ultima = NotaFiscal.objects.filter(
-                empresa=empresa, 
-                serie=serie_nota
+                empresa=empresa,
+                serie=serie_nota,
+                ambiente=env_str,
             ).order_by("-numero").first()
             
             numero_nota = (ultima.numero + 1) if ultima else 1
@@ -336,15 +337,23 @@ class NuvemFiscalService:
             return False, f"Erro Interno no Serviço: {str(e)}", 0.0
 
     @classmethod
-    def baixar_pdf(cls, empresa, id_nota_nuvem):
+    def baixar_pdf(cls, empresa, id_nota_nuvem, ambiente=None):
         """
         Recupera o binário do PDF (DANFE) da API.
-        
+
         Args:
             id_nota_nuvem: O ID único gerado pela Nuvem Fiscal (ex: 'nfe_12345...')
+            ambiente: 'producao' ou 'homologacao'. Se omitido, usa empresa.ambiente.
         """
         try:
+            # Usa o ambiente da nota, não o atual da empresa, para autenticar corretamente.
+            ambiente_original = empresa.ambiente
+            if ambiente and ambiente != empresa.ambiente:
+                empresa.ambiente = ambiente
+
             token = cls.pegar_token(empresa)
+            empresa.ambiente = ambiente_original  # restaura sem salvar
+
             if not token:
                 return None, "Falha na autenticação (Token)"
 
