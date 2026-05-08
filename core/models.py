@@ -91,7 +91,7 @@ class Empresa(models.Model):
 
     # --- SÉRIES NFC-e por ambiente ---
     serie_nfce_homologacao = models.IntegerField(default=2, verbose_name="Série NFC-e Homologação")
-    serie_nfce_producao = models.IntegerField(default=3, verbose_name="Série NFC-e Produção")
+    serie_nfce_producao = models.IntegerField(default=2, verbose_name="Série NFC-e Produção")
 
     # --- NUMERAÇÃO NFC-e (último número emitido por ambiente) ---
     # Ajuste manual necessário quando o banco é resetado mas a SEFAZ já tem notas anteriores.
