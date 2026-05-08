@@ -50,6 +50,14 @@ class EmpresaConfigForm(forms.ModelForm):
     senha_pfx_producao = forms.CharField(required=False, label="Senha do PFX Produção",
                                          widget=forms.PasswordInput(attrs=_SECRET, render_value=False))
 
+    # --- Secrets NuvemFiscal (fora do Meta para nunca sobrescrever se enviado em branco) ---
+    nuvem_client_secret_homologacao_plain = forms.CharField(
+        required=False, label="Client Secret (Nuvem Fiscal) - Testes",
+        widget=forms.PasswordInput(attrs=_SECRET, render_value=False))
+    nuvem_client_secret_producao_plain = forms.CharField(
+        required=False, label="Client Secret (Nuvem Fiscal) - Real",
+        widget=forms.PasswordInput(attrs=_SECRET, render_value=False))
+
     # --- CSC tokens (plain text; cifrado no save()) ---
     csc_token_homologacao_plain = forms.CharField(required=False, label="CSC Token Homologação",
                                                   widget=forms.PasswordInput(attrs=_SECRET, render_value=False))
@@ -60,8 +68,8 @@ class EmpresaConfigForm(forms.ModelForm):
         model = Empresa
         fields = [
             'ambiente', 'emissor_fiscal',
-            'nuvem_client_id_homologacao', 'nuvem_client_secret_homologacao',
-            'nuvem_client_id_producao', 'nuvem_client_secret_producao',
+            'nuvem_client_id_homologacao',
+            'nuvem_client_id_producao',
             'csc_id_homologacao', 'csc_id_producao',
             'serie_nfce_homologacao', 'serie_nfce_producao',
             'numero_nfce_homologacao', 'numero_nfce_producao',
@@ -70,9 +78,7 @@ class EmpresaConfigForm(forms.ModelForm):
             'ambiente': forms.Select(attrs=_FC),
             'emissor_fiscal': forms.Select(attrs=_FC),
             'nuvem_client_id_homologacao': forms.TextInput(attrs=_FC),
-            'nuvem_client_secret_homologacao': forms.PasswordInput(attrs=_SECRET, render_value=False),
             'nuvem_client_id_producao': forms.TextInput(attrs=_FC),
-            'nuvem_client_secret_producao': forms.PasswordInput(attrs=_SECRET, render_value=False),
             'csc_id_homologacao': forms.TextInput(attrs={**_FC, 'placeholder': 'Ex: 1'}),
             'csc_id_producao': forms.TextInput(attrs={**_FC, 'placeholder': 'Ex: 1'}),
             'serie_nfce_homologacao': forms.NumberInput(attrs=_FC),
@@ -126,17 +132,16 @@ class EmpresaConfigForm(forms.ModelForm):
         return None
 
     def save(self, commit=True):
-        # Captura os secrets ANTES do super() sobrescrever self.instance com os dados do form
-        secret_hom_atual = self.instance.nuvem_client_secret_homologacao
-        secret_prod_atual = self.instance.nuvem_client_secret_producao
-
         empresa = super().save(commit=False)
 
-        # --- Secrets NuvemFiscal: preserva valor atual se campo enviado em branco ---
-        if not empresa.nuvem_client_secret_homologacao:
-            empresa.nuvem_client_secret_homologacao = secret_hom_atual
-        if not empresa.nuvem_client_secret_producao:
-            empresa.nuvem_client_secret_producao = secret_prod_atual
+        # --- Secrets NuvemFiscal: só atualiza se o usuário digitou um novo valor ---
+        secret_hom = self.cleaned_data.get('nuvem_client_secret_homologacao_plain', '')
+        if secret_hom:
+            empresa.nuvem_client_secret_homologacao = secret_hom
+
+        secret_prod = self.cleaned_data.get('nuvem_client_secret_producao_plain', '')
+        if secret_prod:
+            empresa.nuvem_client_secret_producao = secret_prod
 
         # --- Certificado homologação ---
         pfx_hom = self.cleaned_data.get('pfx_homologacao')
