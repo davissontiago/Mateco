@@ -286,7 +286,9 @@ class SefazService:
             .order_by("-numero")
             .first()
         )
-        numero = (ultima.numero + 1) if ultima else 1
+        ultimo_db = ultima.numero if ultima else 0
+        ultimo_manual = empresa.numero_nfce_producao if is_producao else empresa.numero_nfce_homologacao
+        numero = max(ultimo_db, ultimo_manual) + 1
         return serie, numero
 
     @classmethod

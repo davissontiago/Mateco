@@ -64,6 +64,7 @@ class EmpresaConfigForm(forms.ModelForm):
             'nuvem_client_id_producao', 'nuvem_client_secret_producao',
             'csc_id_homologacao', 'csc_id_producao',
             'serie_nfce_homologacao', 'serie_nfce_producao',
+            'numero_nfce_homologacao', 'numero_nfce_producao',
         ]
         widgets = {
             'ambiente': forms.Select(attrs=_FC),
@@ -76,6 +77,8 @@ class EmpresaConfigForm(forms.ModelForm):
             'csc_id_producao': forms.TextInput(attrs={**_FC, 'placeholder': 'Ex: 1'}),
             'serie_nfce_homologacao': forms.NumberInput(attrs=_FC),
             'serie_nfce_producao': forms.NumberInput(attrs=_FC),
+            'numero_nfce_homologacao': forms.NumberInput(attrs=_FC),
+            'numero_nfce_producao': forms.NumberInput(attrs=_FC),
         }
 
     def _validar_pfx(self, pfx_file, senha):

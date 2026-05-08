@@ -93,6 +93,13 @@ class Empresa(models.Model):
     serie_nfce_homologacao = models.IntegerField(default=2, verbose_name="Série NFC-e Homologação")
     serie_nfce_producao = models.IntegerField(default=3, verbose_name="Série NFC-e Produção")
 
+    # --- NUMERAÇÃO NFC-e (último número emitido por ambiente) ---
+    # Ajuste manual necessário quando o banco é resetado mas a SEFAZ já tem notas anteriores.
+    numero_nfce_homologacao = models.IntegerField(default=0, verbose_name="Último nº NFC-e Homologação",
+                                                  help_text="Último número emitido. Ajuste se o banco foi resetado.")
+    numero_nfce_producao = models.IntegerField(default=0, verbose_name="Último nº NFC-e Produção",
+                                               help_text="Último número emitido. Ajuste se o banco foi resetado.")
+
     # --- ENDEREÇO ---
     cep = models.CharField(max_length=9, verbose_name="CEP")
     logradouro = models.CharField(max_length=100, verbose_name="Endereço")
