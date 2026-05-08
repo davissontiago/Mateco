@@ -126,14 +126,17 @@ class EmpresaConfigForm(forms.ModelForm):
         return None
 
     def save(self, commit=True):
+        # Captura os secrets ANTES do super() sobrescrever self.instance com os dados do form
+        secret_hom_atual = self.instance.nuvem_client_secret_homologacao
+        secret_prod_atual = self.instance.nuvem_client_secret_producao
+
         empresa = super().save(commit=False)
 
         # --- Secrets NuvemFiscal: preserva valor atual se campo enviado em branco ---
-        original = self.instance
         if not empresa.nuvem_client_secret_homologacao:
-            empresa.nuvem_client_secret_homologacao = original.nuvem_client_secret_homologacao
+            empresa.nuvem_client_secret_homologacao = secret_hom_atual
         if not empresa.nuvem_client_secret_producao:
-            empresa.nuvem_client_secret_producao = original.nuvem_client_secret_producao
+            empresa.nuvem_client_secret_producao = secret_prod_atual
 
         # --- Certificado homologação ---
         pfx_hom = self.cleaned_data.get('pfx_homologacao')
