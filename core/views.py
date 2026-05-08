@@ -169,11 +169,16 @@ def imprimir_nota(request, nota_id):
     empresa = get_empresa_usuario(request)
     nota = get_object_or_404(NotaFiscal, id=nota_id, empresa=empresa)
 
-    # Nota sem id_nota foi emitida via SEFAZ direto; usa QR Code em vez de PDF.
+    # Nota SEFAZ direto: gera DANFE local a partir do XML autorizado.
     if not nota.id_nota:
-        if nota.qrcode_url:
-            return JsonResponse({'qrcode_url': nota.qrcode_url, 'chave': nota.chave})
-        return JsonResponse({'error': 'PDF não disponível para emissão SEFAZ direto neste momento.'}, status=404)
+        try:
+            from core.danfe import gerar_danfe_nfce
+            pdf_bytes = gerar_danfe_nfce(nota)
+            response = HttpResponse(pdf_bytes, content_type='application/pdf')
+            response['Content-Disposition'] = f'inline; filename="danfe_{nota.numero}.pdf"'
+            return response
+        except Exception as e:
+            return JsonResponse({'error': f'Erro ao gerar DANFE: {str(e)}'}, status=500)
 
     pdf_content, erro_msg = NuvemFiscalService.baixar_pdf(empresa, nota.id_nota, ambiente=nota.ambiente)
     if pdf_content:
