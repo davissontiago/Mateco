@@ -54,8 +54,6 @@ async function gerarEsboçoLote() {
     if (isNaN(valorTotal) || valorTotal <= 0 || isNaN(qtdNotas) || qtdNotas <= 0) {
         alert("Preencha o valor total e a quantidade de notas corretamente."); return;
     }
-    if (qtdNotas > 20) { alert("Limite o lote a 20 notas por vez."); return; }
-
     const btnGerar = document.getElementById('btn-gerar');
     btnGerar.innerText = "⏳ A Simular..."; btnGerar.disabled = true;
 
@@ -320,6 +318,22 @@ function tempoAleatorio(minSeg = 4, maxSeg = 13) {
     return (Math.floor(Math.random() * (maxSeg - minSeg + 1)) + minSeg) * 1000;
 }
 
+// Estima o tempo total do lote: (qtd - 1) delays humanos entre notas (4-13s cada)
+// + tempo de rede/processamento de cada emissão (estimado em 1-3s por nota)
+function estimarTempoLoteSeg(qtd) {
+    const gaps = Math.max(qtd - 1, 0);
+    const minSeg = gaps * 4 + qtd * 1;
+    const maxSeg = gaps * 13 + qtd * 3;
+    return { minSeg, maxSeg };
+}
+
+function formatarDuracao(segundos) {
+    const min = Math.floor(segundos / 60);
+    const seg = Math.round(segundos % 60);
+    if (min <= 0) return `${seg}s`;
+    return `${min}min ${seg}s`;
+}
+
 // Exibe contagem regressiva visível na nota enquanto aguarda
 async function contarRegressiva(nota, totalMs) {
     const passos = Math.ceil(totalMs / 1000);
@@ -350,6 +364,11 @@ function abrirModalConfirmacao() {
     document.getElementById('qtdModalConfirmacao').innerText = notasPendentes.length;
     document.getElementById('valorModalConfirmacao').innerText = "Total: R$ " + totalSoma.toFixed(2);
     document.getElementById('pagamentoModalConfirmacao').innerText = "Pagamento: " + textoPagamento; // Injeta o texto
+
+    // --- ESTIMATIVA DE TEMPO ---
+    const { minSeg, maxSeg } = estimarTempoLoteSeg(notasPendentes.length);
+    document.getElementById('tempoModalConfirmacao').innerText =
+        `⏱ Tempo estimado: ${formatarDuracao(minSeg)} a ${formatarDuracao(maxSeg)}`;
 
     document.getElementById('modalConfirmacaoLote').showModal();
 }
